@@ -15,12 +15,25 @@ class Scanner {
         char advance();
         void add_token(TokenType type);
         void add_token(TokenType type, void *literal);
+        bool match(char expected);
+        char peek();
+        char peek_next();
+        void string();
+        static bool is_digit(char c);
+        static bool is_alpha(char c);
+        static bool is_alpha_numeric(char c);
+        void identifier();
+        void number();
+
+        /* Captures [this->start .. this->current) as a string */
+        std::string capture_to_string();
 
     public:
         Scanner(const char *content, long src_len);
         bool is_at_end() const;
         std::vector<Token> scan_tokens();
         void scan_token();
+
 
 };
 
