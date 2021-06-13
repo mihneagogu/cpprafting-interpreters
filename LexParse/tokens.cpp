@@ -17,20 +17,54 @@ Token::Token(Token &&other) {
   this->line = other.line;
 }
 
-std::string Token::to_string() const {
-    std::string res(token_type_to_string(this->type));
-    res += " ";
-    res += this->lexeme;
-    res += " ";
-    res += "some literal";
-
-    return res;
+Token::~Token() {
+  // TODO: Change this once we know what type literal is
+  switch (this->type) {
+    case TokenType::STRING:
+      delete (std::string *) this->literal;
+      break;
+    case TokenType::NUMBER:
+      delete (double *) this->literal;
+      break;
+    default:
+      break;
+  }
 }
 
+std::string Token::to_string() const {
+  std::string res(token_type_to_string(this->type));
+  res += " ";
+  if (this->type != TokenType::TOKENEOF) {
+    res += this->lexeme;
+    res += " ";
+  }
+  if (this->literal != nullptr) {
+    switch (this->type) {
+      case TokenType::STRING: {
+        std::string *str = (std::string *) this->literal;
+        res += *str;
+        break;
+      }
+    default:
+      res += "some literal";
+      break;
+    }
+  }
+
+  return res;
+}
 
 std::string token_type_to_string(TokenType ty) {
-    switch (ty) {
-        case LEFT_PAREN: return "(";
-        default: return "SOME TOKEN";
-    }
+  switch (ty) {
+  case TokenType::LEFT_PAREN:
+    return "(";
+  case TokenType::IDENTIFIER:
+    return "IDENTIFIER";
+  case TokenType::TOKENEOF:
+    return "EOF";
+  case TokenType::FOR:
+    return "FOR";
+  default:
+    return "SOME TOKEN";
+  }
 }

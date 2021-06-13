@@ -1,9 +1,11 @@
-#include "scanner.hpp"
-#include "../main.hpp"
-#include "tokens.hpp"
 #include <cstring>
 #include <string>
 #include <cstdlib>
+#include <iostream>
+
+#include "scanner.hpp"
+#include "../main.hpp"
+#include "tokens.hpp"
 
 Scanner::Scanner(const char *content, long src_len) {
   this->src = content;
@@ -37,8 +39,7 @@ void Scanner::string() {
   }
 
   advance(); // Match closing '"'
-  // TODO: check the length is right
-  int n = this->current - 1 - this->start; // String spans from start
+  int n = this->current - 2 - this->start; // String spans from start + 1 until current - 1
   char copy[n+1];
   strncpy(copy, this->src + start + 1, n);
   copy[n] = '\0';
@@ -139,7 +140,7 @@ void Scanner::identifier() {
   while(Scanner::is_alpha_numeric(peek())) { advance(); }
 
 
-  std::string text = "";
+  std::string text = capture_to_string();
   auto iter = Lox::keywords.find(text);
   TokenType ty;
   if (iter != Lox::keywords.end()) {
@@ -187,11 +188,7 @@ char Scanner::advance() { return this->src[this->current++]; }
 
 void Scanner::add_token(TokenType type) { add_token(type, nullptr); }
 void Scanner::add_token(TokenType type, void *literal) {
-  int n = this->current - this->start;
-  char txt[n + 1];
-  strncpy(txt, this->src + start, n);
-  txt[n] = '\0';
-  std::string text(txt);
+  std::string text = capture_to_string();
   this->tokens.push_back(Token{type, std::move(text), literal, this->line});
 }
 

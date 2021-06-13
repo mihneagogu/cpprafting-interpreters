@@ -35,6 +35,7 @@ class Token {
         Token(TokenType type, std::string lexeme, void *literal, int line);
 
         Token(Token &&other);
+        ~Token();
 
         std::string to_string() const;
 

@@ -61,6 +61,9 @@ static void run_prompt() {
 static void run(char *content, long content_len) {
   auto sc = Scanner(content, content_len);
   auto tokens = sc.scan_tokens();
+  for (auto& tok : tokens) {
+    std::cout << tok.to_string() << std::endl;
+  }
   free(content);
 }
 
@@ -74,7 +77,7 @@ static void run_file(const char *file) {
   fseek(prog, 0, SEEK_END);
   long len = ftell(prog);
   rewind(prog);
-  char *content = (char *)malloc(sizeof(char) * len);
+  char *content = (char *) malloc(sizeof(char) * len);
   ASSERT_ALLOC(content);
   size_t read = fread(content, len, 1, prog);
 
@@ -90,10 +93,6 @@ static void run_file(const char *file) {
 
 int main(int argc, char **argv) {
   Lox compiler;
-
-  std::string msg = "Really long string that cannot use small string "
-                    "optimisation so we allocate it";
-  compiler.error(0, msg);
 
   if (argc > 2) {
     print_usage();
