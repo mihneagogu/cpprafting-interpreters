@@ -6,7 +6,7 @@ restart:
 	make clean && make
 
 build:
-	$(CC) $(STD) main.cpp LexParse/tokens.cpp LexParse/scanner.cpp -g -o jlox && mkdir target && mv ./jlox ./target/jlox
+	$(CC) $(STD) main.cpp LexParse/tokens.cpp LexParse/scanner.cpp LexParse/expr.cpp -g -o jlox && mkdir target && mv ./jlox ./target/jlox
 
 clean:
 	rm -rf ./target

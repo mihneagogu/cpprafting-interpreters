@@ -4,6 +4,7 @@
 #include <string>
 
 #include "tokens.hpp"
+#include "../util.hpp"
 
 class Expr;
 
@@ -27,9 +28,9 @@ class GroupingExpr {
 
 class LiteralExpr {
   public:
-    void* maybe_value;
+    Option<Literal> maybe_lit;
     std::string parenthesize() const;
-    LiteralExpr(void *maybe_value);
+    LiteralExpr(Option<Literal> maybe_lit);
     LiteralExpr(LiteralExpr &&to_move);
 };
 
@@ -55,12 +56,13 @@ class Expr {
             GroupingExpr group;
             LiteralExpr lit;
             UnaryExpr unary;
-        } content;
+        };
 
     Expr(BinaryExpr bin);
     Expr(GroupingExpr group);
     Expr(LiteralExpr lit);
     Expr(UnaryExpr unary);
+    Expr(Expr&& to_move);
 
     std::string parenthesize() const;
     /* Parenthesizes a list of expressions. The type of each element of ... is "Expr *" */

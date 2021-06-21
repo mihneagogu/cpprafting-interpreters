@@ -7,6 +7,7 @@
 #include "scanner.hpp"
 #include "../main.hpp"
 #include "../util.hpp"
+#include "expr.hpp"
 #include "tokens.hpp"
 
 Scanner::Scanner(const char *content, long src_len) {

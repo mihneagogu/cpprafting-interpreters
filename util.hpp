@@ -11,6 +11,14 @@
 #define Option std::optional
 #define None (std::nullopt)
 
+/*
+** Initializes a union field of type "_ty" with _ty's constructor, passing the expression
+** to pass to the constructor.
+** Especially useful with move constructors
+** This special initialization is necessary because union fields use ininited memory, so we need
+** to initialize the pointer in place so that we do not read uninited memory accidentally
+*/
+#define init_union_field(_fieldname, _ty, _to_init_with) new((void *) &_fieldname) _ty(_to_init_with)
 
 
 

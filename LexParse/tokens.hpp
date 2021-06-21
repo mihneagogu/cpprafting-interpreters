@@ -2,7 +2,7 @@
 #define TOKENS_H_
 
 #include <string>
-#include <optional>
+#include "../util.hpp"
 
 enum TokenType {
 LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
@@ -47,7 +47,7 @@ class Literal {
 class Token {
     private:
         TokenType type;
-        std::optional<Literal> literal; // TODO: Change this once we find out what it is
+        Option<Literal> literal; // TODO: Change this once we find out what it is
         int line;
 
     public:
@@ -55,6 +55,7 @@ class Token {
         Token(TokenType type, std::string lexeme, std::optional<Literal> literal, int line);
 
         Token(Token &&other);
+        Token& operator=(Token &&to_move);
         ~Token() = default;
 
         std::string to_string() const;

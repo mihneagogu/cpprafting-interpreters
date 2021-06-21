@@ -3,6 +3,7 @@
 #include <memory>
 #include <iostream>
 #include "tokens.hpp"
+#include "../util.hpp"
 
 Literal::~Literal() {
   switch (this->ty) {
@@ -34,11 +35,12 @@ Literal& Literal::operator=(Literal &&to_move) {
     case LiteralTy::LIT_STRING:
       // Carefully construct str properly, without reading uninited memory
       // (because we are using a union)
-      new((void *) &str) std::string(std::move(to_move.str));
+      init_union_field(str, std::string, std::move(to_move.str));
       break;
     default:
       throw std::runtime_error("Unknown Literal type. This should never happen");
   }
+  return *this;
 }
 
 Literal::Literal(Literal &&to_move) {
@@ -50,7 +52,7 @@ Literal::Literal(Literal &&to_move) {
     case LiteralTy::LIT_STRING:
       // Carefully construct str properly, without reading uninited memory
       // (because we are using a union)
-      new((void *) &str) std::string(std::move(to_move.str));
+      init_union_field(str, std::string, std::move(to_move.str));
       break;
     default:
       throw std::runtime_error("Unknown Literal type. This should never happen");
@@ -58,6 +60,13 @@ Literal::Literal(Literal &&to_move) {
 
 }
 
+Token& Token::operator=(Token &&to_move) {
+  this->lexeme = std::move(to_move.lexeme);
+  this->literal = std::move(to_move.literal);
+  this->type = to_move.type;
+  this->line = to_move.line;
+  return *this;
+}
 
 Token::Token(TokenType type, std::string lexeme, std::optional<Literal> lit, int line): literal(std::move(lit)), lexeme(std::move(lexeme)) {
   this->type = type;
