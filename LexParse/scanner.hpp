@@ -1,6 +1,7 @@
 #ifndef SCANNER_H_
 #define SCANNER_H_
 #include <vector>
+#include <optional>
 #include "tokens.hpp"
 
 class Scanner {
@@ -14,7 +15,7 @@ class Scanner {
 
         char advance();
         void add_token(TokenType type);
-        void add_token(TokenType type, void *literal);
+        void add_token(TokenType type, std::optional<Literal> literal);
         bool match(char expected);
         char peek();
         char peek_next();

@@ -11,7 +11,9 @@ class Main {
     }
     String outputDir = args[0];
     defineAst(outputDir, Arrays.asList("Binary   : Expr* left, Token operator, Expr* right",
-        "Grouping : Expr expression", "Literal  : Object value", "Unary    : Token operator, Expr right"));
+                                       "Grouping : Expr* expression",
+                                       "Literal  : void* value",
+                                       "Unary    : Token operator, Expr* right"));
   }
 
   private static void defineAst(String outputDir, List<String> types) throws IOException {
@@ -45,7 +47,7 @@ class Main {
 
   private static void defineType(PrintWriter writer, String className, String fieldList) {
     writer.println("class " + className + "{");
-    writer.println("     public: ");
+    writer.println("  public: ");
 
     String[] fields = fieldList.split(", ");
     for (String field : fields) {

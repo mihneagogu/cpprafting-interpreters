@@ -12,6 +12,7 @@
 
 #define WRONG_USAGE (64)
 
+
 // YES!!! I KNOW I COULD HAVE USED CONSTEXPR FOR THIS
 std::unordered_map<std::string, TokenType> Lox::keywords = {
     {"and", TokenType::AND},     {"class", TokenType::CLASS},

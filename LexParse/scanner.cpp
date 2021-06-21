@@ -2,9 +2,11 @@
 #include <string>
 #include <cstdlib>
 #include <iostream>
+#include <optional>
 
 #include "scanner.hpp"
 #include "../main.hpp"
+#include "../util.hpp"
 #include "tokens.hpp"
 
 Scanner::Scanner(const char *content, long src_len) {
@@ -40,12 +42,18 @@ void Scanner::string() {
 
   advance(); // Match closing '"'
   int n = this->current - 2 - this->start; // String spans from start + 1 until current - 1
+  std::cout << "current: " << current << std::endl;
   char copy[n+1];
   strncpy(copy, this->src + start + 1, n);
   copy[n] = '\0';
-  std::string *str = new std::string(copy);
+  std::string str = std::string(copy);
+  std::cout << "Str: " << str << std::endl;
   // TODO: Change the string * to std::move(str) once we know the concrete type of literal later in the spec
-  add_token(TokenType::STRING, (void *) str);
+  Literal lit(str);
+  std::cout << lit.str << std::endl;
+  auto opt = Option<Literal>{std::move(lit)};
+  std::cout << opt->str << std::endl;
+  add_token(TokenType::STRING, std::move(opt));
 }
 
 char Scanner::peek_next() {
@@ -180,16 +188,16 @@ void Scanner::number() {
   copy[len] = '\0';
   char *_unused;
   // TODO: Replace the new call to double once we know the type of literal.
-  double *d = new double{strtod(copy, &_unused)};
-  add_token(TokenType::NUMBER, (void *) d);
+  double n = strtod(copy, &_unused);
+  add_token(TokenType::NUMBER, Option<Literal>{Literal(n)});
 }
 
 char Scanner::advance() { return this->src[this->current++]; }
 
-void Scanner::add_token(TokenType type) { add_token(type, nullptr); }
-void Scanner::add_token(TokenType type, void *literal) {
+void Scanner::add_token(TokenType type) { add_token(type, None); }
+void Scanner::add_token(TokenType type,  Option<Literal> literal) {
   std::string text = capture_to_string();
-  this->tokens.push_back(Token{type, std::move(text), literal, this->line});
+  this->tokens.push_back(Token{type, std::move(text), std::move(literal), this->line});
 }
 
 /* Captures [this->start .. this->current) as a string */
@@ -207,7 +215,7 @@ std::vector<Token> Scanner::scan_tokens() {
     scan_token();
   }
 
-  this->tokens.push_back(Token{TokenType::TOKENEOF, "", nullptr, line});
+  this->tokens.push_back(Token{TokenType::TOKENEOF, "", None, line});
   std::vector<Token> res(std::move(this->tokens));
   return res;
 }

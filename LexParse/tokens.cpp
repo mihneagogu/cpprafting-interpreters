@@ -1,35 +1,74 @@
+#include <stdexcept>
+#include <string>
+#include <memory>
+#include <iostream>
 #include "tokens.hpp"
 
-Token::Token(TokenType type, std::string lexeme, void *literal, int line) {
+Literal::~Literal() {
+  switch (this->ty) {
+    case LiteralTy::LIT_STRING:
+      std::destroy_at(&this->str);
+      break;
+    case LiteralTy::LIT_NUMBER:
+      break;
+    default:
+      std::cerr << "Unknown Literal type when destructing Literal. This should never happen" << std::endl;
+  }
+}
+
+Literal::Literal(double number) {
+  this->ty = LiteralTy::LIT_NUMBER;
+  this->number = number;
+}
+
+Literal::Literal(std::string str): str(std::move(str)) {
+  this->ty = LiteralTy::LIT_STRING;
+}
+
+Literal& Literal::operator=(Literal &&to_move) {
+  this->ty = to_move.ty;
+  switch (to_move.ty) {
+    case LiteralTy::LIT_NUMBER:
+      this->number = to_move.number;
+      break;
+    case LiteralTy::LIT_STRING:
+      // Carefully construct str properly, without reading uninited memory
+      // (because we are using a union)
+      new((void *) &str) std::string(std::move(to_move.str));
+      break;
+    default:
+      throw std::runtime_error("Unknown Literal type. This should never happen");
+  }
+}
+
+Literal::Literal(Literal &&to_move) {
+  this->ty = to_move.ty;
+  switch (to_move.ty) {
+    case LiteralTy::LIT_NUMBER:
+      this->number = to_move.number;
+      break;
+    case LiteralTy::LIT_STRING:
+      // Carefully construct str properly, without reading uninited memory
+      // (because we are using a union)
+      new((void *) &str) std::string(std::move(to_move.str));
+      break;
+    default:
+      throw std::runtime_error("Unknown Literal type. This should never happen");
+  }
+
+}
+
+
+Token::Token(TokenType type, std::string lexeme, std::optional<Literal> lit, int line): literal(std::move(lit)), lexeme(std::move(lexeme)) {
   this->type = type;
-  this->lexeme = lexeme;
-  this->literal = literal;
   this->line = line;
 }
 
-Token::Token(Token &&other) {
-  // There are more concise ways of writing this, but this is really clean so it
-  // will do just fine
+Token::Token(Token &&other): literal(std::move(other.literal)), lexeme(std::move(other.lexeme)) {
   this->type = other.type;
-  this->lexeme = std::move(other.lexeme);
-  this->literal = other.literal;
-  other.literal = nullptr;
   this->line = other.line;
 }
 
-Token::~Token() {
-  // TODO: Change this once we know what type literal is
-  switch (this->type) {
-    case TokenType::STRING:
-      delete (std::string *) this->literal;
-      break;
-    case TokenType::NUMBER:
-      delete (double *) this->literal;
-      break;
-    default:
-      break;
-  }
-}
 
 std::string Token::to_string() const {
   std::string res(token_type_to_string(this->type));
@@ -38,19 +77,18 @@ std::string Token::to_string() const {
     res += this->lexeme;
     res += " ";
   }
-  if (this->literal != nullptr) {
-    switch (this->type) {
-      case TokenType::STRING: {
-        std::string *str = (std::string *) this->literal;
-        res += *str;
-        break;
-      }
+
+  if (!this->literal.has_value()) {
+    return res;
+  }
+  switch (this->type) {
+    case TokenType::STRING:
+      res += this->literal->str;
+      break;
     default:
       res += "some literal";
       break;
-    }
   }
-
   return res;
 }
 
