@@ -7,9 +7,9 @@
 
 BinaryExpr::BinaryExpr(BinaryExpr &&to_move): op(std::move(to_move.op)) {
     this->left = to_move.left;
-    this->left = nullptr;
+    to_move.left = nullptr;
     this->right = to_move.right;
-    this->right = nullptr;
+    to_move.right = nullptr;
 }
 
 BinaryExpr::BinaryExpr(Expr *left, Token op, Expr *right): op(std::move(op)) {
@@ -44,7 +44,14 @@ std::string LiteralExpr::parenthesize() const {
         return "nil";
     }
     // TODO(mike): Change this to actual literal when we know what the void * is
-    return "some_literal";
+    switch (this->maybe_lit->ty) {
+        case LiteralTy::LIT_NUMBER:
+            return std::to_string(this->maybe_lit->number);
+        case LiteralTy::LIT_STRING:
+            return this->maybe_lit->str;
+        default:
+            return "some_literal";
+    }
 }
 
 UnaryExpr::UnaryExpr(Token op, Expr *right): op(std::move(op)) {
@@ -63,42 +70,47 @@ std::string UnaryExpr::parenthesize() const {
 
 Expr::Expr(BinaryExpr bin) {
     this->ty = ExprTy::BINARY;
-    init_union_field(bin, BinaryExpr, std::move(bin));
+    init_union_field(this->bin, BinaryExpr, std::move(bin));
 }
 
 Expr::Expr(GroupingExpr group) {
     this->ty = ExprTy::GROUPING;
-    init_union_field(group, GroupingExpr, std::move(group));
+    init_union_field(this->group, GroupingExpr, std::move(group));
 }
 
 Expr::Expr(LiteralExpr lit) {
     this->ty = ExprTy::LITERAL;
-    init_union_field(lit, LiteralExpr, std::move(lit));
+    init_union_field(this->lit, LiteralExpr, std::move(lit));
+    std::cout << this->lit.maybe_lit.has_value() << std::endl;
 }
 
 Expr::Expr(UnaryExpr unary) {
     this->ty = ExprTy::UNARY;
-    init_union_field(unary, UnaryExpr, std::move(unary));
+    init_union_field(this->unary, UnaryExpr, std::move(unary));
 }
 
 Expr::Expr(Expr&& to_move) {
     this->ty = to_move.ty;
     switch (this->ty) {
         case ExprTy::BINARY:
-            init_union_field(bin, BinaryExpr, std::move(to_move.bin));
+            init_union_field(this->bin, BinaryExpr, std::move(to_move.bin));
             break;
         case ExprTy::GROUPING:
-            init_union_field(bin, GroupingExpr, std::move(to_move.group));
+            init_union_field(this->bin, GroupingExpr, std::move(to_move.group));
             break;
         case ExprTy::LITERAL:
-            init_union_field(bin, LiteralExpr, std::move(to_move.lit));
+            init_union_field(this->bin, LiteralExpr, std::move(to_move.lit));
             break;
         case ExprTy::UNARY:
-            init_union_field(bin, UnaryExpr, std::move(to_move.unary));
+            init_union_field(this->bin, UnaryExpr, std::move(to_move.unary));
             break;
         default:
             std::cerr << "Unknown Literal type when constructing an Expr. This should never happen" << std::endl;
     }
+
+}
+
+Expr::~Expr() {
 
 }
 
@@ -118,19 +130,19 @@ std::string Expr::parenthesize() const {
     }
 }
 
-std::string Expr::parenthesize(std::string name, int n_args, ...) {
+std::string Expr::parenthesize(const std::string& name, int n_args, ...) {
 
     va_list args;
     va_start(args, n_args);
 
     std::string res = "";
     res += '(';
-    res += std::move(name);
+    res += name;
 
     for (int i = 0; i < n_args; i++) {
         const Expr *e = va_arg(args, const Expr *);
-        res += '(';
-        res += std::move(e->parenthesize());
+        res += ' ';
+        res += e->parenthesize();
     }
     res += ')';
     return res;

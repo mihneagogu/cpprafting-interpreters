@@ -63,10 +63,11 @@ class Expr {
     Expr(LiteralExpr lit);
     Expr(UnaryExpr unary);
     Expr(Expr&& to_move);
+    ~Expr();
 
     std::string parenthesize() const;
     /* Parenthesizes a list of expressions. The type of each element of ... is "Expr *" */
-    static std::string parenthesize(std::string name, int n_args, ...);
+    static std::string parenthesize(const std::string& name, int n_args, ...);
 };
 
 

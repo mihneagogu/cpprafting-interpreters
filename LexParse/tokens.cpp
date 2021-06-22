@@ -35,7 +35,7 @@ Literal& Literal::operator=(Literal &&to_move) {
     case LiteralTy::LIT_STRING:
       // Carefully construct str properly, without reading uninited memory
       // (because we are using a union)
-      init_union_field(str, std::string, std::move(to_move.str));
+      init_union_field(this->str, std::string, std::move(to_move.str));
       break;
     default:
       throw std::runtime_error("Unknown Literal type. This should never happen");
@@ -52,7 +52,7 @@ Literal::Literal(Literal &&to_move) {
     case LiteralTy::LIT_STRING:
       // Carefully construct str properly, without reading uninited memory
       // (because we are using a union)
-      init_union_field(str, std::string, std::move(to_move.str));
+      init_union_field(this->str, std::string, std::move(to_move.str));
       break;
     default:
       throw std::runtime_error("Unknown Literal type. This should never happen");

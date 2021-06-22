@@ -7,6 +7,7 @@
 
 #include "LexParse/scanner.hpp"
 #include "LexParse/tokens.hpp"
+#include "LexParse/expr.hpp"
 #include "main.hpp"
 #include "util.hpp"
 
@@ -94,6 +95,18 @@ static void run_file(const char *file) {
 
 int main(int argc, char **argv) {
   Lox compiler;
+
+  auto minus_tok = Token(TokenType::MINUS, "-", None, 1);
+  auto lit = LiteralExpr(Option<Literal>{Literal(123.0)});
+  auto *literal = new Expr(std::move(lit));
+
+  auto *unex = new Expr(UnaryExpr(std::move(minus_tok), literal));
+  auto star = Token(TokenType::STAR, "*", None, 1);
+
+  auto *lit2 = new Expr(Option<Literal>{Literal(45.67)});
+  auto *group = new Expr(GroupingExpr(lit2));
+  auto e = Expr(BinaryExpr(unex, std::move(star), group));
+  std::cout << e.parenthesize() << std::endl;
 
   if (argc > 2) {
     print_usage();

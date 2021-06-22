@@ -1,5 +1,7 @@
 # Prerequisites
 *.d
+.idea
+.vscode
 
 target
 
