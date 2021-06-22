@@ -212,6 +212,5 @@ std::vector<Token> Scanner::scan_tokens() {
   }
 
   this->tokens.push_back(Token{TokenType::TOKENEOF, "", None, line});
-  std::vector<Token> res(std::move(this->tokens));
-  return res;
+  return std::move(this->tokens);
 }

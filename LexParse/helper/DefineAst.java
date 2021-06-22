@@ -39,7 +39,7 @@ class Main {
     writer.println(className + "::" + className + "(" + fieldList + ") {");
     for (String field : fields) {
       String name = field.split(" ")[1];
-      writer.println("      this->" + name + " = " + name + ";");
+      writer.println("  this->" + name + " = " + name + ";");
     }
     writer.println("}");
 
@@ -53,6 +53,24 @@ class Main {
     for (String field : fields) {
       writer.println("    " + field + ";");
     }
+
+    // Print constructor definition;
+    writer.print("    " + className + "::" + className + "(");
+    for (int i = 0; i < fields.length; i++) {
+      var field = fields[i];
+      writer.print(field);
+      if (i != fields.length - 1) {
+        writer.print(", ");
+      }
+    }
+    writer.println(");");
+
+    // Print move constructor definition
+    writer.print("    " + className + "::" + className + "(");
+    writer.println(className + " &&to_move);");
+
+
+
     writer.println();
 
     writer.println("};");

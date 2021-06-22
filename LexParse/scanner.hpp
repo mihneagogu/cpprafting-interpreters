@@ -15,7 +15,7 @@ class Scanner {
 
         char advance();
         void add_token(TokenType type);
-        void add_token(TokenType type, std::optional<Literal> literal);
+        void add_token(TokenType type, Option<Literal> literal);
         bool match(char expected);
         char peek();
         char peek_next();
@@ -32,7 +32,11 @@ class Scanner {
     public:
         Scanner(const char *content, long src_len);
         bool is_at_end() const;
+
+        /* Scans the source code producing a list of tokens. This will move "this->tokens" after
+         *it has been filled with tokens, at the end of the function */
         std::vector<Token> scan_tokens();
+
         void scan_token();
 
 
