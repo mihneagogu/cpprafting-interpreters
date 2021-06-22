@@ -107,6 +107,7 @@ int main(int argc, char **argv) {
   auto *group = new Expr(GroupingExpr(lit2));
   auto e = Expr(BinaryExpr(unex, std::move(star), group));
   std::cout << e.parenthesize() << std::endl;
+  
 
   if (argc > 2) {
     print_usage();

@@ -48,12 +48,7 @@ void Scanner::string() {
   strncpy(copy, this->src + start + 1, n);
   copy[n] = '\0';
   std::string str = std::string(copy);
-  std::cout << "Str: " << str << std::endl;
-  // TODO: Change the string * to std::move(str) once we know the concrete type of literal later in the spec
-  Literal lit(str);
-  std::cout << lit.str << std::endl;
-  auto opt = Option<Literal>{std::move(lit)};
-  std::cout << opt->str << std::endl;
+  auto opt = Option<Literal>{Literal{std::move(str)}};
   add_token(TokenType::STRING, std::move(opt));
 }
 
@@ -197,7 +192,7 @@ char Scanner::advance() { return this->src[this->current++]; }
 
 void Scanner::add_token(TokenType type) { add_token(type, None); }
 void Scanner::add_token(TokenType type,  Option<Literal> literal) {
-  std::string text = capture_to_string();
+  auto text = capture_to_string();
   this->tokens.push_back(Token{type, std::move(text), std::move(literal), this->line});
 }
 

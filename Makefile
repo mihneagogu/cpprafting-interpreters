@@ -1,12 +1,21 @@
 CC = g++
 STD = -std=c++17
-all: build
+LEXPARSE = LexParse/tokens.cpp LexParse/scanner.cpp LexParse/expr.cpp
+ASAN = -fsanitize=address
+
+all: restart
+
+safe:
+	$(CC) $(STD) main.cpp $(LEXPARSE) $(ASAN) -g -o jlox && mkdir target && mv ./jlox ./target/jlox
+
+release:
+	$(CC) $(STD) main.cpp $(LEXPARSE) -O3 -g -o jlox && mkdir target && mv ./jlox ./target/jlox
 
 restart: 
-	make clean && make
+	make clean && make build
 
 build:
-	$(CC) $(STD) main.cpp LexParse/tokens.cpp LexParse/scanner.cpp LexParse/expr.cpp -g -o jlox && mkdir target && mv ./jlox ./target/jlox
+	$(CC) $(STD) main.cpp $(LEXPARSE) -g -o jlox && mkdir target && mv ./jlox ./target/jlox
 
 clean:
 	rm -rf ./target

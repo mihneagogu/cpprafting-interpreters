@@ -94,6 +94,9 @@ std::string Token::to_string() const {
     case TokenType::STRING:
       res += this->literal->str;
       break;
+    case TokenType::NUMBER:
+      res += std::to_string(this->literal->number);
+      break;
     default:
       res += "some literal";
       break;
