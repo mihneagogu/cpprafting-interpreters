@@ -16,6 +16,7 @@ class BinaryExpr {
     std::string parenthesize() const;
     BinaryExpr(Expr *left, Token op, Expr *right);
     BinaryExpr(BinaryExpr &&to_move);
+    ~BinaryExpr();
 };
 
 class GroupingExpr {
@@ -24,6 +25,7 @@ class GroupingExpr {
     std::string parenthesize() const;
     GroupingExpr(Expr *expr);
     GroupingExpr(GroupingExpr &&to_move);
+    ~GroupingExpr();
 };
 
 class LiteralExpr {
@@ -32,6 +34,7 @@ class LiteralExpr {
     std::string parenthesize() const;
     LiteralExpr(Option<Literal> maybe_lit);
     LiteralExpr(LiteralExpr &&to_move);
+    ~LiteralExpr();
 };
 
 class UnaryExpr {
@@ -41,6 +44,7 @@ class UnaryExpr {
     std::string parenthesize() const;
     UnaryExpr(Token op, Expr *right);
     UnaryExpr(UnaryExpr &&to_move);
+    ~UnaryExpr();
 };
 
 
