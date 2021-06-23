@@ -72,15 +72,18 @@ Token& Parser::previous() {
 }
 
 Expr Parser::comparison() {
-  auto expr = term();
+  auto *expr = new Expr(term());
 
   while (match(4, TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS,
                TokenType::LESS_EQUAL)) {
     auto op = previous().clone();
     auto *right = new Expr(term());
-    expr = Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
+    auto *other = new Expr(BinaryExpr(expr, std::move(op), right));
+    expr = other;
   }
-  return expr;
+  Expr ret(std::move(*expr));
+  delete expr;
+  return ret;
 }
 
 Expr Parser::term() {
