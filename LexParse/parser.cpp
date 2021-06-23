@@ -84,27 +84,31 @@ Expr Parser::comparison() {
 }
 
 Expr Parser::term() {
-  auto expr = factor();
+  auto *expr = new Expr(factor());
 
   while (match(2, TokenType::MINUS, TokenType::PLUS)) {
-    auto op = previous().clone();
+    auto op = Token(previous().clone());
     auto *right = new Expr(factor());
-    Expr other = Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
-    expr = std::move(other);
+    auto *other = new Expr(BinaryExpr(expr, std::move(op), right));
+    expr = other;
   }
-  return expr;
+  Expr ret(std::move(*expr));
+  delete expr;
+  return ret;
 }
 
 Expr Parser::factor() {
-  auto expr = unary();
+  auto *expr = new Expr(unary());
 
   while (match(2, TokenType::SLASH, TokenType::STAR)) {
     auto op = previous().clone();
     auto *right = new Expr(unary());
-    Expr other = Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
-    expr = std::move(other);
+    Expr *other = new Expr(BinaryExpr(expr, std::move(op), right));
+    expr = other;
   }
-  return expr;
+  Expr ret(std::move(*expr));
+  delete expr;
+  return ret;
 }
 
 Expr Parser::unary() {

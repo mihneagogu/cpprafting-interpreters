@@ -57,29 +57,6 @@ static void run_file(const char *file) {
 int main(int argc, char **argv) {
   Lox compiler;
 
-
-    auto minus_tok = Token(TokenType::MINUS, "-", None, 1);
-    auto lit = LiteralExpr(Literal(123.0));
-    auto *literal = new Expr(std::move(lit));
-
-    auto *unex = new Expr(UnaryExpr(std::move(minus_tok), literal));
-    auto star = Token(TokenType::STAR, "*", None, 1);
-
-    auto *lit2 = new Expr(Literal(45.67));
-    auto *group = new Expr(GroupingExpr(lit2));
-    auto e = Expr(BinaryExpr(unex, std::move(star), group));
-    std::cout << e.parenthesize() << std::endl;
-
-    auto minus2 = Token(TokenType::MINUS, "-", None, 1);
-    auto m2 = LiteralExpr(Literal(255.0));
-    auto literal2 = new Expr(std::move(m2));
-    auto twoex = Expr(UnaryExpr(std::move(minus2), literal2));
-
-    // e = std::move(twoex);
-    // e.parenthesize();
-
-
-
   if (argc > 2) {
     print_usage();
     exit(WRONG_USAGE);

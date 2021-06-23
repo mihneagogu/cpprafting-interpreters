@@ -5,74 +5,95 @@
 #include "../util.hpp"
 
 enum TokenType {
-LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
-COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
+    UNASSIGNED,
+    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
+    COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
 
 // One or two character tokens.
-BANG, BANG_EQUAL,
-EQUAL, EQUAL_EQUAL,
-GREATER, GREATER_EQUAL,
-LESS, LESS_EQUAL,
+    BANG, BANG_EQUAL,
+    EQUAL, EQUAL_EQUAL,
+    GREATER, GREATER_EQUAL,
+    LESS, LESS_EQUAL,
 
 // Literals.
-IDENTIFIER, STRING, NUMBER,
+    IDENTIFIER, STRING, NUMBER,
 
 // Keywords.
-AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
-PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
+    AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
+    PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
 
-TOKENEOF
+    TOKENEOF
 };
 
 std::string token_type_to_string(TokenType ty);
 
-enum LiteralTy { LIT_NUMBER, LIT_STRING, LIT_NIL, LOX_BOOL };
+enum LiteralTy {
+    LIT_NUMBER, LIT_STRING, LIT_NIL, LOX_BOOL, LIT_UNASSIGNED
+};
+
 class Literal {
-    private:
-        Literal(const Literal& other);
-        Literal(LiteralTy nil);
-    public:
+private:
+    Literal(const Literal &other);
 
-        LiteralTy ty;
-        union {
-            double number;
-            std::string str;
-            bool lox_bool;
-            LiteralTy nil; // The literal is Lox's "nil". This is just a placeholder
-        };
-        Literal(double number);
-        Literal(std::string str);
-        Literal(bool lox_bool);
-        static Literal lox_nil();
-        static Literal lox_false();
-        static Literal lox_true();
-        Literal(Literal &&to_move);
-        Literal& operator=(Literal &&to_move);
-        Literal clone() const;
+    Literal(LiteralTy nil);
 
-        ~Literal();
+public:
+
+    LiteralTy ty;
+    union {
+        double number;
+        std::string str;
+        bool lox_bool;
+        LiteralTy nil; // The literal is Lox's "nil". This is just a placeholder
+    };
+
+    Literal(double number);
+
+    Literal(std::string str);
+
+    Literal(bool lox_bool);
+
+    static Literal lox_nil();
+
+    static Literal lox_false();
+
+    static Literal lox_true();
+
+    Literal(Literal &&to_move);
+
+    Literal &operator=(Literal &&to_move);
+
+    Literal clone() const;
+
+    ~Literal();
 
 
 };
 
 class Token {
-    private:
-        int line;
-        Token(const Token &other);
+private:
+    int line;
 
-    public:
-        int get_line() const;
-        Option<Literal> literal; // TODO: Change this once we find out what it is
-        Token clone() const;
-        TokenType type;
-        std::string lexeme;
-        Token(TokenType type, std::string lexeme, Option<Literal> literal, int line);
+    Token(const Token &other);
 
-        Token(Token &&other);
-        Token& operator=(Token &&to_move);
-        ~Token() = default;
+public:
+    Option<Literal> literal; // TODO: Change this once we find out what it is
+    TokenType type;
+    std::string lexeme;
 
-        std::string to_string() const;
+    int get_line() const;
+
+    Token clone() const;
+
+    Token(TokenType type, std::string lexeme, Option<Literal> literal, int line);
+
+    Token(Token &&other);
+
+    Token &operator=(Token &&to_move);
+
+    ~Token() = default;
+
+    std::string to_string() const;
 
 };
 

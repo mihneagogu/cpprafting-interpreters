@@ -69,7 +69,7 @@ LiteralExpr::LiteralExpr(Literal lit): lit(std::move(lit)) {}
 LiteralExpr::LiteralExpr(LiteralExpr &&to_move): lit(std::move(to_move.lit)) {}
 
 LiteralExpr& LiteralExpr::operator=(LiteralExpr &&to_move) {
-    init_union_field(this->lit, Literal, std::move(to_move).lit);
+    this->lit = std::move(to_move.lit);
     return *this;
 }
 
@@ -137,23 +137,40 @@ Expr::Expr(UnaryExpr unary) {
 }
 
 Expr& Expr::operator=(Expr&& to_move) {
-    this->ty = to_move.ty;
     switch (this->ty) {
         case ExprTy::BINARY:
-            init_union_field(this->bin, BinaryExpr, std::move(to_move.bin));
+            std::destroy_at(&this->bin);
             break;
         case ExprTy::GROUPING:
-            init_union_field(this->lit, GroupingExpr, std::move(to_move.group));
+            std::destroy_at(&this->group);
             break;
         case ExprTy::LITERAL:
-            init_union_field(this->lit, LiteralExpr, std::move(to_move.lit));
+            std::destroy_at(&this->lit);
             break;
         case ExprTy::UNARY:
-            init_union_field(this->unary, UnaryExpr, std::move(to_move.unary));
+            std::destroy_at(&this->unary);
+            break;
+    }
+    switch (to_move.ty) {
+        case ExprTy::BINARY:
+            // init_union_field(this->bin, BinaryExpr, std::move(to_move.bin));
+            break;
+        case ExprTy::GROUPING:
+            // init_union_field(this->lit, GroupingExpr, std::move(to_move.group));
+            this->group = std::move(to_move.group);
+            break;
+        case ExprTy::LITERAL:
+            // init_union_field(this->lit, LiteralExpr, std::move(to_move.lit));
+            this->lit = std::move(to_move.lit);
+            break;
+        case ExprTy::UNARY:
+            // init_union_field(this->unary, UnaryExpr, std::move(to_move.unary));
+            this->unary = std::move(to_move.unary);
             break;
         default:
             throw std::runtime_error("Unknown Expr type. This");
     }
+    this->ty = to_move.ty;
     return *this;
 }
 
