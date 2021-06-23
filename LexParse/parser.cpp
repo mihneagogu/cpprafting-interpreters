@@ -71,46 +71,40 @@ Token& Parser::previous() {
 }
 
 Expr Parser::comparison() {
-  auto *expr = new Expr(term());
+  auto expr = Expr(term());
 
   while (match(4, TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS,
                TokenType::LESS_EQUAL)) {
     auto op = previous().clone();
     auto *right = new Expr(term());
-    auto *other = new Expr(BinaryExpr(expr, std::move(op), right));
-    expr = other;
+    auto other = Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
+    expr = std::move(other);
   }
-  Expr ret(std::move(*expr));
-  delete expr;
-  return ret;
+  return expr;
 }
 
 Expr Parser::term() {
-  auto *expr = new Expr(factor());
+  auto expr = Expr(factor());
 
   while (match(2, TokenType::MINUS, TokenType::PLUS)) {
     auto op = Token(previous().clone());
     auto *right = new Expr(factor());
-    auto *other = new Expr(BinaryExpr(expr, std::move(op), right));
-    expr = other;
+    auto other = Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
+    expr = std::move(other);
   }
-  Expr ret(std::move(*expr));
-  delete expr;
-  return ret;
+  return expr;
 }
 
 Expr Parser::factor() {
-  auto *expr = new Expr(unary());
+  auto expr = Expr(unary());
 
   while (match(2, TokenType::SLASH, TokenType::STAR)) {
     auto op = previous().clone();
     auto *right = new Expr(unary());
-    Expr *other = new Expr(BinaryExpr(expr, std::move(op), right));
-    expr = other;
+    Expr other = Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
+    expr = std::move(other);
   }
-  Expr ret(std::move(*expr));
-  delete expr;
-  return ret;
+  return expr;
 }
 
 Expr Parser::unary() {
