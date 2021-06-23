@@ -28,7 +28,7 @@ enum TokenType {
 std::string token_type_to_string(TokenType ty);
 
 enum LiteralTy {
-    LIT_NUMBER, LIT_STRING, LIT_NIL, LOX_BOOL, LIT_UNASSIGNED
+    LIT_NUMBER, LIT_STRING, LIT_NIL, LIT_BOOL, LIT_UNASSIGNED
 };
 
 class Literal {

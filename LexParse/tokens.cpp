@@ -11,6 +11,7 @@ Literal::~Literal() {
             std::destroy_at(&this->str);
             break;
         case LiteralTy::LIT_NUMBER:
+        case LiteralTy::LIT_BOOL:
             break;
         default:
             std::cerr << "Unknown Literal type when destructing Literal. This should never happen" << std::endl;
@@ -18,7 +19,7 @@ Literal::~Literal() {
 }
 
 Literal::Literal(bool lox_value) {
-    this->ty = LiteralTy::LOX_BOOL;
+    this->ty = LiteralTy::LIT_BOOL;
     this->lox_bool = lox_value;
 }
 

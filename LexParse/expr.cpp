@@ -137,6 +137,10 @@ Expr::Expr(UnaryExpr unary) {
 }
 
 Expr& Expr::operator=(Expr&& to_move) {
+// The order here is very important. It might be the case that "this" was previously another type of
+// expression, in which case we need to manually destruct the expression from before (as we are using a union)
+// and only the initialize the union field (without this->, since that would destruct the previous parameter, which is obviously uninited memory)
+
     switch (this->ty) {
         case ExprTy::BINARY:
             std::destroy_at(&this->bin);
@@ -153,19 +157,16 @@ Expr& Expr::operator=(Expr&& to_move) {
     }
     switch (to_move.ty) {
         case ExprTy::BINARY:
-            // init_union_field(this->bin, BinaryExpr, std::move(to_move.bin));
+            init_union_field(this->bin, BinaryExpr, std::move(to_move.bin));
             break;
         case ExprTy::GROUPING:
-            // init_union_field(this->lit, GroupingExpr, std::move(to_move.group));
-            this->group = std::move(to_move.group);
+            init_union_field(this->lit, GroupingExpr, std::move(to_move.group));
             break;
         case ExprTy::LITERAL:
-            // init_union_field(this->lit, LiteralExpr, std::move(to_move.lit));
-            this->lit = std::move(to_move.lit);
+            init_union_field(this->lit, LiteralExpr, std::move(to_move.lit));
             break;
         case ExprTy::UNARY:
-            // init_union_field(this->unary, UnaryExpr, std::move(to_move.unary));
-            this->unary = std::move(to_move.unary);
+            init_union_field(this->unary, UnaryExpr, std::move(to_move.unary));
             break;
         default:
             throw std::runtime_error("Unknown Expr type. This");

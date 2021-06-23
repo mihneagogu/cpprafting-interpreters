@@ -43,7 +43,6 @@ void Scanner::string() {
 
   advance(); // Match closing '"'
   int n = this->current - 2 - this->start; // String spans from start + 1 until current - 1
-  std::cout << "current: " << current << std::endl;
   char copy[n+1];
   strncpy(copy, this->src + start + 1, n);
   copy[n] = '\0';

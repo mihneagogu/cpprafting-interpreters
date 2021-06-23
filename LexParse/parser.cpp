@@ -38,7 +38,7 @@ bool Parser::match(int n_types, /*TokenType... types*/...) {
   va_list args;
   va_start(args, n_types);
   for (int i = 0; i < n_types; i++) {
-    TokenType ty = (TokenType)va_arg(args, int);
+    TokenType ty = (TokenType) va_arg(args, int);
     if (check(ty)) {
       auto prev = advance();
       return true;
@@ -67,7 +67,6 @@ bool Parser::is_at_end() { return peek().type == TokenType::TOKENEOF; }
 Token& Parser::peek() { return this->tokens[this->current]; }
 
 Token& Parser::previous() {
-    auto& prev = this->tokens[this->current - 1];
     return this->tokens[this->current - 1];
 }
 
