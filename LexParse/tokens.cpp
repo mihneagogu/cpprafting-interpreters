@@ -17,6 +17,46 @@ Literal::~Literal() {
   }
 }
 
+Literal::Literal(bool lox_value) {
+  this->ty = LiteralTy::LOX_BOOL;
+  this->lox_bool = lox_value;
+}
+
+Literal Literal::lox_false() {
+  return Literal(false);
+}
+
+Literal Literal::lox_true() {
+  return Literal(true);
+}
+
+Literal::Literal(LiteralTy _nil) {
+  ASSERT_COND(_nil == LiteralTy::LIT_NIL, "Nil literal constructor can only be passed LIT_NIL\n");
+  this->ty = LiteralTy::LIT_NIL;
+  this->nil = this->ty;
+}
+
+Literal Literal::lox_nil() {
+  return Literal(LiteralTy::LIT_NIL);
+}
+
+Literal::Literal(const Literal& other) {
+  this->ty = other.ty;
+  switch (this->ty) {
+    case LiteralTy::LIT_NUMBER:
+      this->number = other.number;
+      break;
+    case LiteralTy::LIT_STRING:
+      init_union_field(this->str, std::string, other.str);
+      break;
+    case LiteralTy::LIT_NIL:
+      this->nil = LiteralTy::LIT_NIL;
+      break;
+    default:
+      std::cerr << "Unknown Literal type. This should never happen" << std::endl;
+  }
+}
+
 Literal::Literal(double number) {
   this->ty = LiteralTy::LIT_NUMBER;
   this->number = number;
@@ -25,6 +65,7 @@ Literal::Literal(double number) {
 Literal::Literal(std::string str): str(std::move(str)) {
   this->ty = LiteralTy::LIT_STRING;
 }
+
 
 Literal& Literal::operator=(Literal &&to_move) {
   this->ty = to_move.ty;
@@ -43,6 +84,10 @@ Literal& Literal::operator=(Literal &&to_move) {
   return *this;
 }
 
+Literal Literal::clone() const {
+  return Literal(*this);
+}
+
 Literal::Literal(Literal &&to_move) {
   this->ty = to_move.ty;
   switch (to_move.ty) {
@@ -55,9 +100,21 @@ Literal::Literal(Literal &&to_move) {
       init_union_field(this->str, std::string, std::move(to_move.str));
       break;
     default:
-      throw std::runtime_error("Unknown Literal type. This should never happen");
+      // throw std::runtime_error("Unknown Literal type. This should never happen");
+      return;
   }
 
+}
+
+
+Token::Token(TokenType type, std::string lexeme, Option<Literal> lit, int line): literal(std::move(lit)), lexeme(std::move(lexeme)) {
+  this->type = type;
+  this->line = line;
+}
+
+Token::Token(Token &&other): literal(std::move(other.literal)), lexeme(std::move(other.lexeme)) {
+  this->type = other.type;
+  this->line = other.line;
 }
 
 Token& Token::operator=(Token &&to_move) {
@@ -68,14 +125,23 @@ Token& Token::operator=(Token &&to_move) {
   return *this;
 }
 
-Token::Token(TokenType type, std::string lexeme, std::optional<Literal> lit, int line): literal(std::move(lit)), lexeme(std::move(lexeme)) {
-  this->type = type;
-  this->line = line;
+Token::Token(const Token& other) {
+  this->lexeme = other.lexeme;
+  this->line = other.line;
+  this->type = other.type;
+  if (!other.literal.has_value()) {
+    this->literal = None;
+  } else {
+    this->literal = other.literal->clone();
+  }
 }
 
-Token::Token(Token &&other): literal(std::move(other.literal)), lexeme(std::move(other.lexeme)) {
-  this->type = other.type;
-  this->line = other.line;
+Token Token::clone() const {
+  return Token(*this);
+}
+
+int Token::get_line() const {
+  return this->line;
 }
 
 
@@ -96,6 +162,9 @@ std::string Token::to_string() const {
       break;
     case TokenType::NUMBER:
       res += std::to_string(this->literal->number);
+      break;
+    case TokenType::NIL:
+      res += "nil";
       break;
     default:
       res += "some literal";

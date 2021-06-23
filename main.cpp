@@ -8,51 +8,12 @@
 #include "LexParse/scanner.hpp"
 #include "LexParse/tokens.hpp"
 #include "LexParse/expr.hpp"
-#include "main.hpp"
+#include "LexParse/parser.hpp"
 #include "util.hpp"
+#include "lox.hpp"
 
 #define WRONG_USAGE (64)
 
-
-// YES!!! I KNOW I COULD HAVE USED CONSTEXPR FOR THIS
-std::unordered_map<std::string, TokenType> Lox::keywords = {
-    {"and", TokenType::AND},     {"class", TokenType::CLASS},
-    {"else", TokenType::ELSE},   {"false", TokenType::FALSE},
-    {"for", TokenType::FOR},     {"if", TokenType::IF},
-    {"nil", TokenType::NIL},     {"or", TokenType::OR},
-    {"print", TokenType::PRINT}, {"return", TokenType::RETURN},
-    {"super", TokenType::SUPER}, {"this", TokenType::THIS},
-    {"true", TokenType::TRUE},   {"var", TokenType::VAR},
-    {"while", TokenType::WHILE}};
-
-// -- class Lox implementation //
-
-bool Lox::hasErr = false;
-void Lox::error(int line, std::string &message) {
-  std::string empty = "";
-  Lox::report(line, empty, message);
-}
-
-void Lox::error(int line, const char *message) {
-  std::string empty = "";
-  Lox::report(line, empty, message);
-}
-
-void Lox::report(int line, std::string &where, const char *message) {
-  std::cout << "[line " << line << "] Error" << where << ": " << message
-            << std::endl;
-  Lox::hasErr = true;
-}
-
-void Lox::report(int line, std::string &where, std::string &message) {
-  std::cout << "[line " << line << "] Error" << where << ": " << message
-            << std::endl;
-  Lox::hasErr = true;
-}
-
-bool Lox::hasError() { return Lox::hasErr; }
-
-// -- class Lox implementation //
 
 static void print_usage() { printf("Usage: jlox [script]\n"); }
 
@@ -63,9 +24,9 @@ static void run_prompt() {
 static void run(char *content, long content_len) {
   auto sc = Scanner(content, content_len);
   auto tokens = sc.scan_tokens();
-  for (auto& tok : tokens) {
-    std::cout << tok.to_string() << std::endl;
-  }
+  auto parser = Parser(std::move(tokens));
+  auto e = parser.parse();
+  std::cout << e.parenthesize() << std::endl;
   free(content);
 }
 
@@ -96,18 +57,28 @@ static void run_file(const char *file) {
 int main(int argc, char **argv) {
   Lox compiler;
 
-  auto minus_tok = Token(TokenType::MINUS, "-", None, 1);
-  auto lit = LiteralExpr(Option<Literal>{Literal(123.0)});
-  auto *literal = new Expr(std::move(lit));
 
-  auto *unex = new Expr(UnaryExpr(std::move(minus_tok), literal));
-  auto star = Token(TokenType::STAR, "*", None, 1);
+    auto minus_tok = Token(TokenType::MINUS, "-", None, 1);
+    auto lit = LiteralExpr(Literal(123.0));
+    auto *literal = new Expr(std::move(lit));
 
-  auto *lit2 = new Expr(Option<Literal>{Literal(45.67)});
-  auto *group = new Expr(GroupingExpr(lit2));
-  auto e = Expr(BinaryExpr(unex, std::move(star), group));
-  std::cout << e.parenthesize() << std::endl;
-  
+    auto *unex = new Expr(UnaryExpr(std::move(minus_tok), literal));
+    auto star = Token(TokenType::STAR, "*", None, 1);
+
+    auto *lit2 = new Expr(Literal(45.67));
+    auto *group = new Expr(GroupingExpr(lit2));
+    auto e = Expr(BinaryExpr(unex, std::move(star), group));
+    std::cout << e.parenthesize() << std::endl;
+
+    auto minus2 = Token(TokenType::MINUS, "-", None, 1);
+    auto m2 = LiteralExpr(Literal(255.0));
+    auto literal2 = new Expr(std::move(m2));
+    auto twoex = Expr(UnaryExpr(std::move(minus2), literal2));
+
+    // e = std::move(twoex);
+    // e.parenthesize();
+
+
 
   if (argc > 2) {
     print_usage();

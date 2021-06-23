@@ -1,6 +1,6 @@
 CC = g++
-STD = -std=c++17
-LEXPARSE = LexParse/tokens.cpp LexParse/scanner.cpp LexParse/expr.cpp
+STD = -std=c++2a
+LEXPARSE = lox.cpp LexParse/tokens.cpp LexParse/scanner.cpp LexParse/expr.cpp LexParse/parser.cpp
 ASAN = -fsanitize=address
 
 all: restart

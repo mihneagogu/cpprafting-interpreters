@@ -26,18 +26,29 @@ TOKENEOF
 
 std::string token_type_to_string(TokenType ty);
 
-enum LiteralTy { LIT_NUMBER, LIT_STRING };
+enum LiteralTy { LIT_NUMBER, LIT_STRING, LIT_NIL, LOX_BOOL };
 class Literal {
+    private:
+        Literal(const Literal& other);
+        Literal(LiteralTy nil);
     public:
+
         LiteralTy ty;
         union {
             double number;
             std::string str;
+            bool lox_bool;
+            LiteralTy nil; // The literal is Lox's "nil". This is just a placeholder
         };
         Literal(double number);
         Literal(std::string str);
+        Literal(bool lox_bool);
+        static Literal lox_nil();
+        static Literal lox_false();
+        static Literal lox_true();
         Literal(Literal &&to_move);
         Literal& operator=(Literal &&to_move);
+        Literal clone() const;
 
         ~Literal();
 
@@ -46,13 +57,16 @@ class Literal {
 
 class Token {
     private:
-        TokenType type;
-        Option<Literal> literal; // TODO: Change this once we find out what it is
         int line;
+        Token(const Token &other);
 
     public:
+        int get_line() const;
+        Option<Literal> literal; // TODO: Change this once we find out what it is
+        Token clone() const;
+        TokenType type;
         std::string lexeme;
-        Token(TokenType type, std::string lexeme, std::optional<Literal> literal, int line);
+        Token(TokenType type, std::string lexeme, Option<Literal> literal, int line);
 
         Token(Token &&other);
         Token& operator=(Token &&to_move);

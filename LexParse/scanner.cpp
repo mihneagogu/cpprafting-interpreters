@@ -5,7 +5,7 @@
 #include <optional>
 
 #include "scanner.hpp"
-#include "../main.hpp"
+#include "../lox.hpp"
 #include "../util.hpp"
 #include "expr.hpp"
 #include "tokens.hpp"
@@ -48,8 +48,7 @@ void Scanner::string() {
   strncpy(copy, this->src + start + 1, n);
   copy[n] = '\0';
   std::string str = std::string(copy);
-  auto opt = Option<Literal>{Literal{std::move(str)}};
-  add_token(TokenType::STRING, std::move(opt));
+  add_token(TokenType::STRING, Option<Literal>{Literal{std::move(str)}});
 }
 
 char Scanner::peek_next() {
@@ -178,13 +177,10 @@ void Scanner::number() {
     while (is_digit(peek())) { advance(); }
   }
 
-  int len = this->current - this->current;
-  char copy[len+1];
-  strncpy(copy, this->src + current, len);
-  copy[len] = '\0';
-  char *_unused;
+  auto text = capture_to_string();
   // TODO: Replace the new call to double once we know the type of literal.
-  double n = strtod(copy, &_unused);
+  char *_unused;
+  double n = strtod(text.c_str(), &_unused);
   add_token(TokenType::NUMBER, Option<Literal>{Literal(n)});
 }
 
@@ -193,7 +189,7 @@ char Scanner::advance() { return this->src[this->current++]; }
 void Scanner::add_token(TokenType type) { add_token(type, None); }
 void Scanner::add_token(TokenType type,  Option<Literal> literal) {
   auto text = capture_to_string();
-  this->tokens.push_back(Token{type, std::move(text), std::move(literal), this->line});
+  this->tokens.emplace_back(type, std::move(text), std::move(literal), this->line);
 }
 
 /* Captures [this->start .. this->current) as a string */

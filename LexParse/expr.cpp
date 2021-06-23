@@ -13,6 +13,15 @@ BinaryExpr::BinaryExpr(BinaryExpr &&to_move): op(std::move(to_move.op)) {
     to_move.right = nullptr;
 }
 
+BinaryExpr& BinaryExpr::operator=(BinaryExpr &&to_move) {
+    this->left = to_move.left;
+    this->right = to_move.right;
+    this->op = std::move(to_move.op);
+    to_move.left = nullptr;
+    to_move.right = nullptr;
+    return *this;
+}
+
 BinaryExpr::BinaryExpr(Expr *left, Token op, Expr *right): op(std::move(op)) {
     this->left = left;
     this->right = right;
@@ -38,6 +47,12 @@ GroupingExpr::GroupingExpr(GroupingExpr &&to_move) {
     to_move.expression = nullptr;
 }
 
+GroupingExpr& GroupingExpr::operator=(GroupingExpr &&to_move) {
+    this->expression = to_move.expression;
+    to_move.expression = nullptr;
+    return *this;
+}
+
 
 std::string GroupingExpr::parenthesize() const {
     return Expr::parenthesize("group", 1, this->expression);
@@ -49,21 +64,23 @@ GroupingExpr::~GroupingExpr() {
     }
 }
 
-LiteralExpr::LiteralExpr(Option<Literal> maybe_lit) {
-    this->maybe_lit = std::move(maybe_lit);
+LiteralExpr::LiteralExpr(Literal lit): lit(std::move(lit)) {}
+
+LiteralExpr::LiteralExpr(LiteralExpr &&to_move): lit(std::move(to_move.lit)) {}
+
+LiteralExpr& LiteralExpr::operator=(LiteralExpr &&to_move) {
+    init_union_field(this->lit, Literal, std::move(to_move).lit);
+    return *this;
 }
 
-LiteralExpr::LiteralExpr(LiteralExpr &&to_move): maybe_lit(std::move(to_move.maybe_lit)) {}
-
 std::string LiteralExpr::parenthesize() const {
-    if (!this->maybe_lit.has_value()) {
-        return "nil";
-    }
-    switch (this->maybe_lit->ty) {
+    switch (this->lit.ty) {
         case LiteralTy::LIT_NUMBER:
-            return std::to_string(this->maybe_lit->number);
+            return std::to_string(this->lit.number);
         case LiteralTy::LIT_STRING:
-            return this->maybe_lit->str;
+            return this->lit.str;
+        case LiteralTy::LIT_NIL:
+            return "nil";
         default:
             return "some_literal";
     }
@@ -78,6 +95,13 @@ UnaryExpr::UnaryExpr(Token op, Expr *right): op(std::move(op)) {
 UnaryExpr::UnaryExpr(UnaryExpr &&to_move): op(std::move(to_move.op)) {
     this->right = to_move.right;
     to_move.right = nullptr;
+}
+
+UnaryExpr& UnaryExpr::operator=(UnaryExpr &&to_move) {
+    this->op = std::move(to_move.op);
+    this->right = to_move.right;
+    to_move.right = nullptr;
+    return *this;
 }
 
 
@@ -110,6 +134,27 @@ Expr::Expr(LiteralExpr lit) {
 Expr::Expr(UnaryExpr unary) {
     this->ty = ExprTy::UNARY;
     init_union_field(this->unary, UnaryExpr, std::move(unary));
+}
+
+Expr& Expr::operator=(Expr&& to_move) {
+    this->ty = to_move.ty;
+    switch (this->ty) {
+        case ExprTy::BINARY:
+            init_union_field(this->bin, BinaryExpr, std::move(to_move.bin));
+            break;
+        case ExprTy::GROUPING:
+            init_union_field(this->lit, GroupingExpr, std::move(to_move.group));
+            break;
+        case ExprTy::LITERAL:
+            init_union_field(this->lit, LiteralExpr, std::move(to_move.lit));
+            break;
+        case ExprTy::UNARY:
+            init_union_field(this->unary, UnaryExpr, std::move(to_move.unary));
+            break;
+        default:
+            throw std::runtime_error("Unknown Expr type. This");
+    }
+    return *this;
 }
 
 Expr::Expr(Expr&& to_move) {
