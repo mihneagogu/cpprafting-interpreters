@@ -160,7 +160,7 @@ Expr& Expr::operator=(Expr&& to_move) {
             init_union_field(this->bin, BinaryExpr, std::move(to_move.bin));
             break;
         case ExprTy::GROUPING:
-            init_union_field(this->lit, GroupingExpr, std::move(to_move.group));
+            init_union_field(this->group, GroupingExpr, std::move(to_move.group));
             break;
         case ExprTy::LITERAL:
             init_union_field(this->lit, LiteralExpr, std::move(to_move.lit));
