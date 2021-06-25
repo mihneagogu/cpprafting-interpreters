@@ -6,7 +6,7 @@ ASAN = -fsanitize=address
 all: restart
 
 safe:
-	$(CC) $(STD) main.cpp $(LEXPARSE) $(ASAN) -g -o jlox && mkdir target && mv ./jlox ./target/jlox
+	make clean ; $(CC) $(STD) main.cpp $(LEXPARSE) $(ASAN) -g -o jlox && mkdir target && mv ./jlox ./target/jlox 
 
 release:
 	$(CC) $(STD) main.cpp $(LEXPARSE) -O3 -g -o jlox && mkdir target && mv ./jlox ./target/jlox
