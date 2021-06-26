@@ -1,0 +1,192 @@
+#include "interpreter.hpp"
+
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+
+#include "../util.hpp"
+
+LoxElement::LoxElement(LoxTy _nil) {
+  ASSERT_COND(
+      _nil == LoxTy::LOX_NIL,
+      "LoxElement nil constructor should only be called with LOX_NIL\n");
+  this->ty = LoxTy::LOX_NIL;
+  this->lox_nil = this->ty;
+}
+
+LoxElement::LoxElement(double num) {
+  this->ty = LoxTy::LOX_NUMBER;
+  this->lox_number = num;
+}
+
+LoxElement::LoxElement(bool b) {
+  this->ty = LoxTy::LOX_BOOL;
+  this->lox_bool = b;
+}
+
+LoxElement::LoxElement(std::string str) {
+  this->ty = LoxTy::LOX_STRING;
+  init_union_field(this->lox_str, std::string, std::move(str));
+}
+
+LoxElement::LoxElement(LoxElement &&to_move) : ty(to_move.ty) {
+  switch (to_move.ty) {
+  case LoxTy::LOX_NUMBER:
+    this->lox_number = to_move.lox_number;
+    break;
+  case LoxTy::LOX_STRING:
+    init_union_field(this->lox_str, std::string, std::move(to_move.lox_str));
+    break;
+  case LoxTy::LOX_NIL:
+    this->lox_nil = LoxTy::LOX_NIL;
+    break;
+  case LoxTy::LOX_BOOL:
+    this->lox_number = to_move.lox_number;
+    break;
+  case LoxTy::LOX_OBJ:
+    break;
+  default:
+    std::cerr << "Unknown LoxElement type. This should never happen"
+              << std::endl;
+  }
+}
+
+LoxElement LoxElement::nil() { return LoxElement(LoxTy::LOX_NIL); }
+
+LoxElement::~LoxElement() {
+  switch (this->ty) {
+  case LoxTy::LOX_STRING:
+    std::destroy_at(&this->lox_str);
+    break;
+  case LoxTy::LOX_OBJ:
+  case LoxTy::LOX_BOOL:
+  case LoxTy::LOX_NUMBER:
+  case LoxTy::LOX_NIL:
+    break;
+  default:
+    std::cerr << "Unknown LoxElement type. This should never happen"
+              << std::endl;
+    break;
+  }
+}
+
+LoxElement &LoxElement::operator=(LoxElement &&to_move) {
+  switch (this->ty) {
+  case LoxTy::LOX_STRING:
+    std::destroy_at(&this->lox_str);
+    break;
+  case LoxTy::LOX_OBJ:
+  case LoxTy::LOX_BOOL:
+  case LoxTy::LOX_NUMBER:
+  case LoxTy::LOX_NIL:
+    break;
+  default:
+    std::cerr << "Unknown LoxElement type. This should never happen"
+              << std::endl;
+    break;
+  }
+
+  switch (to_move.ty) {
+  case LoxTy::LOX_STRING:
+    this->lox_str = std::move(to_move.lox_str);
+    break;
+  case LoxTy::LOX_OBJ:
+  case LoxTy::LOX_BOOL:
+    this->lox_bool = to_move.lox_bool;
+    break;
+  case LoxTy::LOX_NUMBER:
+    this->lox_number = to_move.lox_number;
+    break;
+  case LoxTy::LOX_NIL:
+    this->lox_nil = LoxTy::LOX_NIL;
+    break;
+  default:
+    std::cerr << "Unknown LoxElement type. This should never happen"
+              << std::endl;
+    break;
+  }
+  this->ty = to_move.ty;
+  return *this;
+}
+
+/*
+** Constructs a LoxElement from the given literal. We make the distinction between
+** LiteralTy and LoxTy because it keeps the interpreter clear and the interpreting stage
+** serves a different purpose from the parsing stage.
+*/
+LoxElement LoxElement::evaluate_literal(const Literal &literal) {
+  switch (literal.ty) {
+    case LiteralTy::LIT_BOOL:
+      return LoxElement(literal.lox_bool);
+    case LiteralTy::LIT_NIL:
+      return LoxElement::nil();
+    case LiteralTy::LIT_NUMBER:
+      return LoxElement(literal.number);
+    case LiteralTy::LIT_STRING:
+      return LoxElement(literal.str);
+    default:
+      throw std::runtime_error("Unknown Literal type. This should never happen");
+  }
+}
+
+LoxElement LoxElement::evaluate_unary_expr(const UnaryExpr &unary) {
+  auto right = LoxElement::evaluate_expr(*unary.right);
+  switch (unary.op.type) {
+    case TokenType::MINUS:
+      // check if this is a number and apply the operation
+      break;
+    case TokenType::BANG:
+      // check that this is a boolean and apply the operation
+      break;
+    default:
+      throw std::runtime_error("Unknown unary operator when evaluating expression.");
+      break;
+  }
+
+  return right;
+
+}
+
+LoxElement LoxElement::evaluate_binary_expr(const BinaryExpr &binary) {
+  auto left = LoxElement::evaluate_expr(*binary.left);
+  auto right = LoxElement::evaluate_expr(*binary.right);
+
+  switch (binary.op.type) {
+    case TokenType::MINUS:
+      break;
+    case TokenType::SLASH:
+      break;
+    case TokenType::STAR:
+      break;
+    default:
+      std::cerr << "Unknown binary operator. This should never happen" << std::endl;
+  }
+  UNREACHABLE();
+}
+
+
+LoxElement LoxElement::evaluate_grouping_expr(const GroupingExpr &group) {
+  return LoxElement::evaluate_expr(*group.expression);
+}
+
+bool LoxElement::is_instance_of(LoxTy ty) const { return this->ty == ty; }
+
+bool LoxElement::is_nil() const {
+  return this->ty == LoxTy::LOX_NIL;
+}
+
+bool LoxElement::is_truthy() const {
+  if (is_instance_of(LoxTy::LOX_BOOL)) {
+    return this->lox_bool;
+  }
+  if (is_nil()) {
+    return false;
+  }
+  return true;
+}
+
+LoxElement Interpreter::evaluate(const Expr &expr) {
+  return LoxElement::evaluate_expr(expr);
+}
+// LoxElement LoxElement::clone() const {
+// }

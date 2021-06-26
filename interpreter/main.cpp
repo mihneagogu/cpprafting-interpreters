@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Interpreter/interpreter.hpp"
 #include "LexParse/scanner.hpp"
 #include "LexParse/tokens.hpp"
 #include "LexParse/expr.hpp"
@@ -26,7 +27,14 @@ static void run(char *content, long content_len) {
   auto tokens = sc.scan_tokens();
   auto parser = Parser(std::move(tokens));
   auto e = parser.parse();
-  std::cout << e.parenthesize() << std::endl;
+  auto interp = Interpreter{};
+  try {
+    LoxElement ret = interp.evaluate(e);
+    std::cout << ret.as_number() << std::endl;
+  } catch (LoxRuntimeErr rer) {
+    std::cout << "Caught runtime error from interpreter\n";
+  }
+  // std::cout << e.parenthesize() << std::endl;
   free(content);
 }
 

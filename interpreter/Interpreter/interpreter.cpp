@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 
 #include "../util.hpp"
 
@@ -108,4 +109,190 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
   return *this;
 }
 
-bool LoxElement::is_instance_of(LoxTy ty) { return this->ty == ty; }
+/*
+** Constructs a LoxElement from the given literal. We make the distinction
+*between
+** LiteralTy and LoxTy because it keeps the interpreter clear and the
+*interpreting stage
+** serves a different purpose from the parsing stage.
+*/
+LoxElement Interpreter::evaluate_literal(const Literal &literal) {
+  switch (literal.ty) {
+  case LiteralTy::LIT_BOOL:
+    return LoxElement(literal.lox_bool);
+  case LiteralTy::LIT_NIL:
+    return LoxElement::nil();
+  case LiteralTy::LIT_NUMBER:
+    return LoxElement(literal.number);
+  case LiteralTy::LIT_STRING:
+    return LoxElement(literal.str);
+  default:
+    throw std::runtime_error("Unknown Literal type. This should never happen");
+  }
+}
+
+
+LoxElement Interpreter::evaluate_unary_expr(const UnaryExpr &unary) {
+  auto right = evaluate(*unary.right);
+  switch (unary.op.type) {
+  case TokenType::MINUS:
+    check_number_operand(unary.op, right);
+    return LoxElement(-right.as_number());
+  case TokenType::BANG:
+    check_bool_operand(unary.op, right);
+    return LoxElement(!right.is_truthy());
+    break;
+  default:
+    throw std::runtime_error(
+        "Unknown unary operator when evaluating expression.");
+    break;
+  }
+
+  return right;
+}
+
+bool LoxElement::is_number() const {
+  return is_instance_of(LoxTy::LOX_NUMBER);
+}
+
+double LoxElement::as_number() const {
+  if (this->ty == LoxTy::LOX_NUMBER) {
+    return this->lox_number;
+  }
+  throw std::runtime_error("LoxElement isn't a number!");
+}
+
+bool LoxElement::equals(const LoxElement &other) {
+  if (is_nil() && other.is_nil()) {
+    return true;
+  } // Two nils are equal
+  if (is_nil() || other.is_nil()) {
+    return false;
+  } // If only one of them is nil, they are not equal
+  if (this->ty != other.ty) {
+    return false;
+  }
+  switch (this->ty) {
+  case LoxTy::LOX_NUMBER:
+    return this->lox_number == other.lox_number;
+  case LoxTy::LOX_BOOL:
+    return this->lox_bool == other.lox_bool;
+  case LoxTy::LOX_STRING:
+    return this->lox_str == other.lox_str;
+  case LoxTy::LOX_OBJ:
+    // TODO
+    return false;
+  default:
+    std::cerr << "Unknown LoxElement type. This should never happen"
+              << std::endl;
+    return false;
+  }
+}
+
+LoxElement Interpreter::evaluate_binary_expr(const BinaryExpr &binary) {
+  auto left = evaluate(*binary.left);
+  auto right = evaluate(*binary.right);
+
+  switch (binary.op.type) {
+  case TokenType::MINUS:
+    // Perform binop on exprs and check that they are the right type
+    check_number_operands(binary.op, left, right);
+     return LoxElement(left.as_number() - right.as_number());
+    break;
+  case TokenType::SLASH:
+    // Perform binop on exprs and check that they are the right type
+    check_number_operands(binary.op, left, right);
+    throw std::runtime_error("Used division which isn't done");
+  case TokenType::STAR:
+    // Perform binop on exprs and check that they are the right type
+    check_number_operands(binary.op, left, right);
+    return LoxElement(left.as_number() * right.as_number());
+    break;
+  case TokenType::PLUS:
+    if (left.is_number() && right.is_number()) {
+      return LoxElement(left.as_number() + right.as_number());
+    }
+    if (left.is_instance_of(LoxTy::LOX_STRING) &&
+        right.is_instance_of(LoxTy::LOX_STRING)) {
+      std::string res = left.lox_str;
+      res += right.lox_str;
+      return LoxElement(std::move(res));
+    }
+    throw LoxRuntimeErr{};
+  case TokenType::GREATER:
+    check_number_operands(binary.op, left, right);
+    return LoxElement(left.as_number() > right.as_number());
+  case TokenType::GREATER_EQUAL:
+    check_number_operands(binary.op, left, right);
+    return LoxElement(left.as_number() >= right.as_number());
+  case TokenType::LESS:
+    check_number_operands(binary.op, left, right);
+    return LoxElement(left.as_number() < right.as_number());
+  case TokenType::LESS_EQUAL:
+    check_number_operands(binary.op, left, right);
+    return LoxElement(left.as_number() <= right.as_number());
+  case TokenType::BANG_EQUAL:
+    return !left.equals(right);
+  case TokenType::EQUAL_EQUAL:
+    return left.equals(right);
+  default:
+    std::cerr << "Unknown binary operator. This should never happen"
+              << std::endl;
+    break;
+  }
+  UNREACHABLE();
+}
+
+LoxElement Interpreter::evaluate_grouping_expr(const GroupingExpr &group) {
+  return evaluate(*group.expression);
+}
+bool Interpreter::check_number_operand(const Token &tok, const LoxElement &right) {
+  if (right.is_number()) {
+    return true;
+  }
+  throw LoxRuntimeErr{};
+}
+
+bool Interpreter::check_bool_operand(const Token &tok, const LoxElement &right) {
+  if (right.ty != LoxTy::LOX_BOOL) {
+    throw LoxRuntimeErr{};
+  }
+  return true;
+}
+bool Interpreter::check_number_operands(const Token &tok, const LoxElement& left, const LoxElement &right) {
+  if (left.ty != LoxTy::LOX_NUMBER || right.ty != LoxTy::LOX_NUMBER) {
+    throw LoxRuntimeErr{};
+  }
+  return true;
+}
+
+
+bool LoxElement::is_instance_of(LoxTy ty) const { return this->ty == ty; }
+
+bool LoxElement::is_nil() const { return this->ty == LoxTy::LOX_NIL; }
+
+bool LoxElement::is_truthy() const {
+  if (is_instance_of(LoxTy::LOX_BOOL)) {
+    return this->lox_bool;
+  }
+  if (is_nil()) {
+    return false;
+  }
+  return true;
+}
+
+LoxElement Interpreter::evaluate(const Expr &expr) {
+  switch (expr.ty) {
+    case ExprTy::BINARY:
+      return evaluate_binary_expr(expr.bin);
+    case ExprTy::UNARY:
+      return evaluate_unary_expr(expr.unary);
+    case ExprTy::GROUPING:
+      return evaluate_grouping_expr(expr.group);
+    case ExprTy::LITERAL:
+      return evaluate_literal(expr.lit.lit);
+    default:
+      throw std::runtime_error("Unknown expression type when interpreting. This should never happen");
+
+  }
+}
