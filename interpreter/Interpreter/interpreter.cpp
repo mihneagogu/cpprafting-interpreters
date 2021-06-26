@@ -202,7 +202,10 @@ LoxElement Interpreter::evaluate_binary_expr(const BinaryExpr &binary) {
   case TokenType::SLASH:
     // Perform binop on exprs and check that they are the right type
     check_number_operands(binary.op, left, right);
-    throw std::runtime_error("Used division which isn't done");
+    if (right.as_number() == 0.0) {
+      throw DivisionByZeroErr{};
+    }
+    return LoxElement(left.as_number() / right.as_number());
   case TokenType::STAR:
     // Perform binop on exprs and check that they are the right type
     check_number_operands(binary.op, left, right);

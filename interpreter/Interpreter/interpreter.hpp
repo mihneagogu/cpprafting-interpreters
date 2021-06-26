@@ -14,6 +14,8 @@ enum LoxTy { LOX_NUMBER, LOX_STRING, LOX_NIL, LOX_OBJ, LOX_BOOL };
  * is not a problem, since it is non-recoverable as far as the user is concerned. */
 class LoxRuntimeErr: std::exception {};
 
+class DivisionByZeroErr: public LoxRuntimeErr{};
+
 /* An actual element (loosely, object) from Lox. It can either be
  * a string, a number, or an object (thinking in terms of Lox)
  * */

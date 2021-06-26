@@ -34,7 +34,6 @@ static void run(char *content, long content_len) {
   } catch (LoxRuntimeErr rer) {
     std::cout << "Caught runtime error from interpreter\n";
   }
-  // std::cout << e.parenthesize() << std::endl;
   free(content);
 }
 
