@@ -6,10 +6,15 @@
 #include <vector>
 
 #include "tokens.hpp"
+#include "stmt.hpp"
 #include "../util.hpp"
 #include "expr.hpp"
 
 /*
+   program        → statement* EOF;
+   statement      → exprStmt | printStmt;
+   exprStmt       → expression ";";
+   printStmt      → "print" expression ";";
    expression     → equality ;
    equality       → comparison ( ( "!=" | "==" ) comparison )* ;
    comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
@@ -35,6 +40,10 @@ class Parser {
         Expr unary();
         Expr primary();
 
+        Stmt statement();
+        Stmt print_statement();
+        Stmt expression_statement();
+
         bool match(int n_types, .../*TokenTy... types*/);
         bool match(TokenType ty);
         bool check(TokenType ty);
@@ -50,7 +59,7 @@ class Parser {
 
     public:
         std::vector<Token> tokens;
-        Expr parse();
+        std::vector<Stmt> parse();
         Parser(std::vector<Token> tokens);
 
 };

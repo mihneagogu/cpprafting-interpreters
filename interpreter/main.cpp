@@ -26,11 +26,10 @@ static void run(char *content, long content_len) {
   auto sc = Scanner(content, content_len);
   auto tokens = sc.scan_tokens();
   auto parser = Parser(std::move(tokens));
-  auto e = parser.parse();
+  auto prog = parser.parse();
   auto interp = Interpreter{};
   try {
-    LoxElement ret = interp.evaluate(e);
-    std::cout << ret.as_number() << std::endl;
+    interp.interpret(prog);
   } catch (LoxRuntimeErr rer) {
     std::cout << "Caught runtime error from interpreter\n";
   }

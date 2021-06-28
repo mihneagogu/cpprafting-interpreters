@@ -1,8 +1,10 @@
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
 #include <string>
+#include <vector>
 
 #include "../LexParse/expr.hpp"
+#include "../LexParse/stmt.hpp"
 #include "../LexParse/tokens.hpp"
 
 enum LoxTy { LOX_NUMBER, LOX_STRING, LOX_NIL, LOX_OBJ, LOX_BOOL };
@@ -44,6 +46,8 @@ public:
 
   bool is_truthy() const;
 
+  std::string stringify() const;
+
   LoxElement(double num);
   LoxElement(std::string str);
   LoxElement(bool b);
@@ -64,11 +68,17 @@ private:
   LoxElement evaluate_unary_expr(const UnaryExpr &group);
   bool check_number_operand(const Token &tok, const LoxElement &right);
   bool check_bool_operand(const Token &tok, const LoxElement &right);
-  bool check_number_operands(const Token &tok, const LoxElement& left, const LoxElement &right);
+  bool check_number_operands(const Token &tok, const LoxElement &left, const LoxElement &right);
+
+  void run_print_stmt(const Print &print);
+  void run_expression_stmt(const Expression &expression);
+  void execute(const Stmt &stmt);
 
 
 public:
+  void interpret(const std::vector<Stmt> &statements);
   LoxElement evaluate(const Expr &expr);
+
 };
 
 #endif // INTERPRETER_H_

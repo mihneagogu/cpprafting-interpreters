@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 #include "../util.hpp"
 
@@ -10,8 +11,7 @@ LoxElement::LoxElement(LoxTy _nil) {
   ASSERT_COND(
       _nil == LoxTy::LOX_NIL,
       "LoxElement nil constructor should only be called with LOX_NIL\n");
-  this->ty = LoxTy::LOX_NIL;
-  this->lox_nil = this->ty;
+  this->ty = LoxTy::LOX_NIL; this->lox_nil = this->ty;
 }
 
 LoxElement::LoxElement(double num) {
@@ -114,7 +114,6 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
 *between
 ** LiteralTy and LoxTy because it keeps the interpreter clear and the
 *interpreting stage
-** serves a different purpose from the parsing stage.
 */
 LoxElement Interpreter::evaluate_literal(const Literal &literal) {
   switch (literal.ty) {
@@ -130,7 +129,6 @@ LoxElement Interpreter::evaluate_literal(const Literal &literal) {
     throw std::runtime_error("Unknown Literal type. This should never happen");
   }
 }
-
 
 LoxElement Interpreter::evaluate_unary_expr(const UnaryExpr &unary) {
   auto right = evaluate(*unary.right);
@@ -151,9 +149,7 @@ LoxElement Interpreter::evaluate_unary_expr(const UnaryExpr &unary) {
   return right;
 }
 
-bool LoxElement::is_number() const {
-  return is_instance_of(LoxTy::LOX_NUMBER);
-}
+bool LoxElement::is_number() const { return is_instance_of(LoxTy::LOX_NUMBER); }
 
 double LoxElement::as_number() const {
   if (this->ty == LoxTy::LOX_NUMBER) {
@@ -197,7 +193,7 @@ LoxElement Interpreter::evaluate_binary_expr(const BinaryExpr &binary) {
   case TokenType::MINUS:
     // Perform binop on exprs and check that they are the right type
     check_number_operands(binary.op, left, right);
-     return LoxElement(left.as_number() - right.as_number());
+    return LoxElement(left.as_number() - right.as_number());
     break;
   case TokenType::SLASH:
     // Perform binop on exprs and check that they are the right type
@@ -249,26 +245,29 @@ LoxElement Interpreter::evaluate_binary_expr(const BinaryExpr &binary) {
 LoxElement Interpreter::evaluate_grouping_expr(const GroupingExpr &group) {
   return evaluate(*group.expression);
 }
-bool Interpreter::check_number_operand(const Token &tok, const LoxElement &right) {
+bool Interpreter::check_number_operand(const Token &tok,
+                                       const LoxElement &right) {
   if (right.is_number()) {
     return true;
   }
   throw LoxRuntimeErr{};
 }
 
-bool Interpreter::check_bool_operand(const Token &tok, const LoxElement &right) {
+bool Interpreter::check_bool_operand(const Token &tok,
+                                     const LoxElement &right) {
   if (right.ty != LoxTy::LOX_BOOL) {
     throw LoxRuntimeErr{};
   }
   return true;
 }
-bool Interpreter::check_number_operands(const Token &tok, const LoxElement& left, const LoxElement &right) {
+bool Interpreter::check_number_operands(const Token &tok,
+                                        const LoxElement &left,
+                                        const LoxElement &right) {
   if (left.ty != LoxTy::LOX_NUMBER || right.ty != LoxTy::LOX_NUMBER) {
     throw LoxRuntimeErr{};
   }
   return true;
 }
-
 
 bool LoxElement::is_instance_of(LoxTy ty) const { return this->ty == ty; }
 
@@ -284,18 +283,67 @@ bool LoxElement::is_truthy() const {
   return true;
 }
 
+std::string LoxElement::stringify() const {
+  switch (this->ty) {
+    case LoxTy::LOX_STRING: 
+      return this->lox_str;
+    case LoxTy::LOX_NUMBER:
+      return std::to_string(this->lox_number);
+    case LoxTy::LOX_BOOL:
+      return std::to_string(this->lox_bool);
+    case LoxTy::LOX_NIL:
+      return "nil";
+    case LoxTy::LOX_OBJ:
+      UNREACHABLE();
+    default:
+      throw std::runtime_error("Unknown LoxElement type. This should never happen");
+  }
+}
+
 LoxElement Interpreter::evaluate(const Expr &expr) {
   switch (expr.ty) {
-    case ExprTy::BINARY:
-      return evaluate_binary_expr(expr.bin);
-    case ExprTy::UNARY:
-      return evaluate_unary_expr(expr.unary);
-    case ExprTy::GROUPING:
-      return evaluate_grouping_expr(expr.group);
-    case ExprTy::LITERAL:
-      return evaluate_literal(expr.lit.lit);
-    default:
-      throw std::runtime_error("Unknown expression type when interpreting. This should never happen");
+  case ExprTy::BINARY:
+    return evaluate_binary_expr(expr.bin);
+  case ExprTy::UNARY:
+    return evaluate_unary_expr(expr.unary);
+  case ExprTy::GROUPING:
+    return evaluate_grouping_expr(expr.group);
+  case ExprTy::LITERAL:
+    return evaluate_literal(expr.lit.lit);
+  default:
+    throw std::runtime_error(
+        "Unknown expression type when interpreting. This should never happen");
+  }
+}
 
+
+void Interpreter::run_print_stmt(const Print &print) {
+  auto returned = evaluate(print.expr);
+  std::cout << returned.stringify() << std::endl;
+}
+
+void Interpreter::run_expression_stmt(const Expression &expression) {
+  evaluate(expression.expr);
+}
+
+void Interpreter::execute(const Stmt &stmt) {
+  switch (stmt.ty) {
+    case StmtTy::STMT_EXPR:
+      run_expression_stmt(stmt.expression);
+      break;
+    case StmtTy::STMT_PRINT:
+      run_print_stmt(stmt.print);
+      break;
+    default:
+      throw std::runtime_error("Unknown Statement type when executing. This should never happen");
+  }
+}
+
+void Interpreter::interpret(const std::vector<Stmt> &statements) {
+  try {
+    for (auto &stmt : statements) {
+      execute(stmt);
+    }
+  } catch (LoxRuntimeErr &ler) {
   }
 }

@@ -5,13 +5,42 @@
 #include "expr.hpp"
 #include "parser.hpp"
 #include "tokens.hpp"
+#include "stmt.hpp"
 #include "../lox.hpp"
 
 Parser::Parser(std::vector<Token> tokens)
     : tokens(std::move(tokens)), current(0) {}
 
 Expr Parser::expression() { return equality(); }
-Expr Parser::parse() { return expression(); }
+std::vector<Stmt> Parser::parse() {
+  std::vector<Stmt> prog;
+  while (!is_at_end()) {
+    prog.push_back(statement());
+  }
+  return prog;
+}
+
+Stmt Parser::print_statement() {
+  auto value = expression();
+  std::string err_msg = "Expected ; after value.";
+  consume(TokenType::SEMICOLON, err_msg);
+  return Print(std::move(value));
+}
+
+Stmt Parser::expression_statement() {
+  auto expr = expression();
+  std::string err_msg = "Expected ; after expression.";
+  consume(TokenType::SEMICOLON, err_msg);
+  return Expression(std::move(expr));
+}
+
+
+Stmt Parser::statement() {
+  if (match(TokenType::PRINT)) {
+    return print_statement();
+  }
+  return expression_statement();
+}
 
 Expr Parser::equality() {
   auto expr = comparison();
