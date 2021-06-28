@@ -17,7 +17,16 @@ public:
   Print(Print &&to_move);
 };
 
-enum StmtTy { STMT_EXPR, STMT_PRINT };
+class Var {
+public:
+    Token name;
+    Expr initializer;
+    Var(Token name, Expr initializer);
+    Var(Var &&to_move);
+    ~Var() = default;
+};
+
+enum StmtTy { STMT_EXPR, STMT_PRINT, STMT_VAR };
 class Stmt {
 private:
 public:
@@ -25,10 +34,12 @@ public:
   union {
     Expression expression;
     Print print;
+    Var var;
   };
   Stmt& operator=(Stmt &&to_move);
   Stmt(Expression expression);
   Stmt(Print print);
+  Stmt(Var var);
   Stmt(Stmt &&to_move);
   ~Stmt();
 };

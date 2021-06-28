@@ -14,9 +14,7 @@ LoxElement::LoxElement(LoxTy _nil) {
   this->ty = LoxTy::LOX_NIL; this->lox_nil = this->ty;
 }
 
-LoxElement::LoxElement(double num) {
-  this->ty = LoxTy::LOX_NUMBER;
-  this->lox_number = num;
+LoxElement::LoxElement(double num) { this->ty = LoxTy::LOX_NUMBER; this->lox_number = num;
 }
 
 LoxElement::LoxElement(bool b) {
@@ -109,6 +107,8 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
   return *this;
 }
 
+Interpreter::Interpreter() {}
+
 /*
 ** Constructs a LoxElement from the given literal. We make the distinction
 *between
@@ -199,7 +199,7 @@ LoxElement Interpreter::evaluate_binary_expr(const BinaryExpr &binary) {
     // Perform binop on exprs and check that they are the right type
     check_number_operands(binary.op, left, right);
     if (right.as_number() == 0.0) {
-      throw DivisionByZeroErr{};
+      throw DivisionByZeroErr{binary.op.clone(), "Cannot divide by zero"};
     }
     return LoxElement(left.as_number() / right.as_number());
   case TokenType::STAR:
@@ -217,7 +217,7 @@ LoxElement Interpreter::evaluate_binary_expr(const BinaryExpr &binary) {
       res += right.lox_str;
       return LoxElement(std::move(res));
     }
-    throw LoxRuntimeErr{};
+    throw LoxRuntimeErr{binary.op.clone(), "Operation '+' exists only on numbers and strings"};
   case TokenType::GREATER:
     check_number_operands(binary.op, left, right);
     return LoxElement(left.as_number() > right.as_number());
@@ -250,13 +250,13 @@ bool Interpreter::check_number_operand(const Token &tok,
   if (right.is_number()) {
     return true;
   }
-  throw LoxRuntimeErr{};
+  throw LoxRuntimeErr{tok.clone(), "Operand must be a number."};
 }
 
 bool Interpreter::check_bool_operand(const Token &tok,
                                      const LoxElement &right) {
   if (right.ty != LoxTy::LOX_BOOL) {
-    throw LoxRuntimeErr{};
+    throw LoxRuntimeErr{tok.clone(), "Operand must be a boolean."};
   }
   return true;
 }
@@ -264,7 +264,7 @@ bool Interpreter::check_number_operands(const Token &tok,
                                         const LoxElement &left,
                                         const LoxElement &right) {
   if (left.ty != LoxTy::LOX_NUMBER || right.ty != LoxTy::LOX_NUMBER) {
-    throw LoxRuntimeErr{};
+    throw LoxRuntimeErr{tok.clone(), "Operand must be a number."};
   }
   return true;
 }
@@ -298,6 +298,10 @@ std::string LoxElement::stringify() const {
     default:
       throw std::runtime_error("Unknown LoxElement type. This should never happen");
   }
+}
+
+LoxElement& Interpreter::evaluate_variable_expr(const VariableExpr& var) {
+  return this->env.get(var.name);
 }
 
 LoxElement Interpreter::evaluate(const Expr &expr) {
@@ -339,6 +343,15 @@ void Interpreter::execute(const Stmt &stmt) {
   }
 }
 
+void Interpreter::run_var_stmt(const Var &var) {
+  if (!var.initializer.is_nil()) {
+    auto val = evaluate(var.initializer);
+    this->env.define(var.name.lexeme, std::move(val));
+  } else {
+    this->env.define(var.name.lexeme, LoxElement::nil());
+  }
+}
+
 void Interpreter::interpret(const std::vector<Stmt> &statements) {
   try {
     for (auto &stmt : statements) {
@@ -346,4 +359,29 @@ void Interpreter::interpret(const std::vector<Stmt> &statements) {
     }
   } catch (LoxRuntimeErr &ler) {
   }
+}
+
+LoxRuntimeErr::LoxRuntimeErr(Token where, std::string why): where(std::move(where)), why(std::move(why)) {}
+LoxRuntimeErr::LoxRuntimeErr(Token where, const char *why): where(std::move(where)), why(std::string{why}) {}
+
+Env::Env() {}
+
+void Env::define(std::string name, LoxElement val) {
+  auto iter = this->values.find(name);
+  if (iter != this->values.end()) {
+    // We allow redefinitions of variables
+    this->values.erase(iter);
+  }
+  this->values.insert({std::move(name), std::move(val)});
+}
+
+LoxElement& Env::get(const Token &name) {
+  auto iter = this->values.find(name.lexeme);
+  if (iter != this->values.end()) {
+      return iter->second;
+   }
+  std::string err = "Undefined variable' ";
+  err += name.lexeme;
+  err += "'.";
+  throw LoxRuntimeErr{name.clone(), err};
 }

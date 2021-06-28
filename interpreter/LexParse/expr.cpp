@@ -5,6 +5,7 @@
 
 #include "expr.hpp"
 #include "../util.hpp"
+#include "tokens.hpp"
 
 BinaryExpr::BinaryExpr(BinaryExpr &&to_move): op(std::move(to_move.op)) {
     this->left = to_move.left;
@@ -115,6 +116,13 @@ UnaryExpr::~UnaryExpr() {
     }
 }
 
+VariableExpr::VariableExpr(Token name): name(std::move(name)) {}
+VariableExpr::VariableExpr(VariableExpr &&to_move): name(std::move(to_move.name)) {}
+
+std::string VariableExpr::parenthesize() const {
+    return this->name.lexeme;
+}
+
 
 Expr::Expr(BinaryExpr bin) {
     this->ty = ExprTy::BINARY;
@@ -134,6 +142,11 @@ Expr::Expr(LiteralExpr lit) {
 Expr::Expr(UnaryExpr unary) {
     this->ty = ExprTy::UNARY;
     init_union_field(this->unary, UnaryExpr, std::move(unary));
+}
+
+Expr::Expr(VariableExpr var_expr) {
+    this->ty = ExprTy::VAR_EXPR;
+    init_union_field(this->var_expr, VariableExpr, std::move(var_expr));
 }
 
 Expr& Expr::operator=(Expr&& to_move) {
@@ -231,6 +244,17 @@ std::string Expr::parenthesize() const {
         default:
             throw std::runtime_error("Unknown expression type. This should never happen");
     }
+}
+
+Expr Expr::lox_nil() {
+    return Expr(LiteralExpr(Literal::lox_nil()));
+}
+
+bool Expr::is_nil() const {
+    if (this->ty == ExprTy::LITERAL && this->lit.lit.is_nil()) {
+        return true;
+    }
+    return false;
 }
 
 std::string Expr::parenthesize(const std::string& name, int n_args, ...) {

@@ -11,14 +11,38 @@
 Parser::Parser(std::vector<Token> tokens)
     : tokens(std::move(tokens)), current(0) {}
 
+
 Expr Parser::expression() { return equality(); }
 std::vector<Stmt> Parser::parse() {
   std::vector<Stmt> prog;
   while (!is_at_end()) {
-    prog.push_back(statement());
+    prog.push_back(declaration());
   }
   return prog;
 }
+
+Stmt Parser::declaration() {
+  if (match(TokenType::VAR)) {
+    return var_declaration();
+  }
+  return statement();
+}
+
+Stmt Parser::var_declaration() {
+  std::string err_msg = "Expect a variable name";
+  auto name = consume(TokenType::IDENTIFIER, err_msg);
+  if (match(TokenType::EQUAL)) {
+    auto initializer = expression();
+    consume(TokenType::SEMICOLON, "Expect ';' after variable declaration");
+    return Stmt(Var(std::move(name), std::move(initializer)));
+  } else {
+    auto initializer = Expr(LiteralExpr(Literal::lox_nil()));
+    consume(TokenType::SEMICOLON, "Expect ';' after variable declaration");
+    return Stmt(Var(std::move(name), std::move(initializer)));
+  }
+}
+
+
 
 Stmt Parser::print_statement() {
   auto value = expression();
@@ -169,6 +193,10 @@ Expr Parser::primary() {
       }
   }
 
+  if (match(TokenType::IDENTIFIER)) {
+    return Expr(VariableExpr(previous().clone()));
+  }
+
   if (match(TokenType::LEFT_PAREN)) {
     auto *expr = new Expr(expression());
     std::string err = "Expect ')' after expression.";
@@ -189,6 +217,11 @@ void Parser::error(Token &tok, std::string &message) {
 
 
 Token Parser::consume(TokenType ty, std::string &message) {
-  if (check(ty)) { return advance();}
+  if (check(ty)) { return advance(); }
   error(peek(), message);
+}
+
+Token Parser::consume(TokenType ty, const char *message) {
+  std::string msg(message);
+  return consume(ty, msg);
 }

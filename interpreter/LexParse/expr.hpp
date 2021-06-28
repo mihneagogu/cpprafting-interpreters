@@ -51,9 +51,18 @@ class UnaryExpr {
     ~UnaryExpr();
 };
 
+class VariableExpr {
+    public:
+        Token name;
+        std::string parenthesize() const;
+    VariableExpr(Token name);
+    VariableExpr(VariableExpr &&to_move);
+    ~VariableExpr() = default;
+};
+
 
 enum ExprTy {
-    BINARY, GROUPING, LITERAL, UNARY
+    BINARY, GROUPING, LITERAL, UNARY, VAR_EXPR
 };
 
 class Expr {
@@ -64,15 +73,18 @@ class Expr {
             GroupingExpr group;
             LiteralExpr lit;
             UnaryExpr unary;
+            VariableExpr var_expr;
         };
-
+    static Expr lox_nil();
     Expr(BinaryExpr bin);
     Expr(GroupingExpr group);
     Expr(LiteralExpr lit);
     Expr(UnaryExpr unary);
+    Expr(VariableExpr var_expr);
     Expr(Expr&& to_move);
     Expr& operator=(Expr&& to_move);
     ~Expr();
+    bool is_nil() const;
 
     std::string parenthesize() const;
     /* Parenthesizes a list of expressions. The type of each element of ... is "Expr *" */

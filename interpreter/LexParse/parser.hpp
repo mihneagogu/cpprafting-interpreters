@@ -11,7 +11,9 @@
 #include "expr.hpp"
 
 /*
-   program        → statement* EOF;
+   program        → declaration* EOF;
+   declaration    → varDecl | statement;
+   varDecl        → "var" IDENTIFIER  ("=" expression )? ";" ;
    statement      → exprStmt | printStmt;
    exprStmt       → expression ";";
    printStmt      → "print" expression ";";
@@ -23,7 +25,7 @@
    unary          → ( "!" | "-" ) unary
                     | primary ;
    primary        → NUMBER | STRING | "true" | "false" | "nil"
-                    | "(" expression ")" ;
+                    | "(" expression ")" | IDENTIFIER ;
 */
 
 
@@ -43,6 +45,8 @@ class Parser {
         Stmt statement();
         Stmt print_statement();
         Stmt expression_statement();
+        Stmt declaration();
+        Stmt var_declaration();
 
         bool match(int n_types, .../*TokenTy... types*/);
         bool match(TokenType ty);
@@ -56,6 +60,7 @@ class Parser {
         Token& peek();
         Token& previous();
         Token consume(TokenType ty, std::string &message);
+        Token consume(TokenType ty, const char *message);
 
     public:
         std::vector<Token> tokens;

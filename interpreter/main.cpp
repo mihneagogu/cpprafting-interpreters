@@ -30,7 +30,7 @@ static void run(char *content, long content_len) {
   auto interp = Interpreter{};
   try {
     interp.interpret(prog);
-  } catch (LoxRuntimeErr rer) {
+  } catch (LoxRuntimeErr &rer) {
     std::cout << "Caught runtime error from interpreter\n";
   }
   free(content);

@@ -59,6 +59,8 @@ public:
 
     static Literal lox_true();
 
+    bool is_nil() const;
+
     Literal(Literal &&to_move);
 
     Literal &operator=(Literal &&to_move);

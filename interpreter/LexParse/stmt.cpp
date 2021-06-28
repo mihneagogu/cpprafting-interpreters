@@ -16,12 +16,20 @@ Print::Print(Expr expr): expr(std::move(expr)) {}
 
 Print::Print(Print &&to_move): expr(std::move(to_move.expr)) {}
 
+Var::Var(Token name, Expr initializer): name(std::move(name)), initializer(std::move(initializer)) {}
+
+Var::Var(Var &&to_move): name(std::move(to_move.name)), initializer(std::move(to_move.initializer)) {}
+
 Stmt::Stmt(Expression expression): expression(std::move(expression)) {
     this->ty = StmtTy::STMT_EXPR;
 }
 
 Stmt::Stmt(Print print): print(std::move(print)) {
     this->ty = StmtTy::STMT_PRINT;
+}
+
+Stmt::Stmt(Var v): var(std::move(v)) {
+    this->ty = StmtTy::STMT_VAR;
 }
 
 Stmt::Stmt(Stmt &&to_move) {
@@ -32,6 +40,9 @@ Stmt::Stmt(Stmt &&to_move) {
                              break;
         case StmtTy::STMT_PRINT:
             init_union_field(this->print, Print, std::move(to_move.print));
+            break;
+        case StmtTy::STMT_VAR:
+            init_union_field(this->var, Var, std::move(to_move.var));
             break;
         default:
             std::cerr << "Unknown Statement type. This should never happen" << std::endl;
@@ -46,6 +57,9 @@ Stmt& Stmt::operator=(Stmt &&to_move) {
         case StmtTy::STMT_PRINT: 
             std::destroy_at(&this->print);
             break;
+        case StmtTy::STMT_VAR:
+            std::destroy_at(&this->var);
+            break;
         default:
             throw std::runtime_error("Unknown Statement type when assigning. This should never happen");
     }
@@ -55,6 +69,9 @@ Stmt& Stmt::operator=(Stmt &&to_move) {
             break;
         case StmtTy::STMT_PRINT: 
             init_union_field(this->print, Print, std::move(print));
+            break;
+        case StmtTy::STMT_VAR:
+            init_union_field(this->var, Var, std::move(to_move.var));
             break;
         default:
             throw std::runtime_error("Unknown Statement type when assigning. This should never happen");
@@ -71,6 +88,9 @@ Stmt::~Stmt() {
                              break;
         case StmtTy::STMT_PRINT:
             std::destroy_at(&this->print);
+            break;
+        case StmtTy::STMT_VAR:
+            std::destroy_at(&this->var);
             break;
         default:
             std::cerr << "Unknown Statement type. This should never happen" << std::endl;

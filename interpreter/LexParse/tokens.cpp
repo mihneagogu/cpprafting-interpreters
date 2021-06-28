@@ -31,6 +31,10 @@ Literal Literal::lox_true() {
     return Literal(true);
 }
 
+bool Literal::is_nil() const {
+    return this->ty == LiteralTy::LIT_NIL;
+}
+
 Literal::Literal(LiteralTy _nil) {
     ASSERT_COND(_nil == LiteralTy::LIT_NIL, "Nil literal constructor can only be passed LIT_NIL\n");
     this->ty = LiteralTy::LIT_NIL;
