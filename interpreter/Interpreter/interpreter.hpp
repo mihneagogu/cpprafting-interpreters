@@ -17,6 +17,7 @@ enum LoxTy { LOX_NUMBER, LOX_STRING, LOX_NIL, LOX_OBJ, LOX_BOOL };
 class LoxElement {
 private:
   LoxElement(LoxTy _nil);
+  LoxElement(const LoxElement &other);
 
 public:
   LoxTy ty;
@@ -35,7 +36,7 @@ public:
 
   bool equals(const LoxElement &other);
 
-  LoxElement clone() const;
+  LoxElement copy() const;
 
   bool is_truthy() const;
 

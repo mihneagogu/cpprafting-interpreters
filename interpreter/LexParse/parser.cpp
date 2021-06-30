@@ -194,6 +194,8 @@ Expr Parser::primary() {
   }
 
   if (match(TokenType::IDENTIFIER)) {
+      auto &prev = previous();
+      auto cl = prev.clone();
     return Expr(VariableExpr(previous().clone()));
   }
 

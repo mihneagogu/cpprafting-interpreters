@@ -1,2 +1,3 @@
-print "asd" + "!23" + "this quite long string" + "marker!";
-print 1 + 2;
+var a = "asd";
+var b = "er";
+print a + b;

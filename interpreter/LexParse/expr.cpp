@@ -167,6 +167,9 @@ Expr& Expr::operator=(Expr&& to_move) {
         case ExprTy::UNARY:
             std::destroy_at(&this->unary);
             break;
+        case ExprTy::VAR_EXPR:
+            std::destroy_at(&this->var_expr);
+            break;
     }
     switch (to_move.ty) {
         case ExprTy::BINARY:
@@ -180,6 +183,9 @@ Expr& Expr::operator=(Expr&& to_move) {
             break;
         case ExprTy::UNARY:
             init_union_field(this->unary, UnaryExpr, std::move(to_move.unary));
+            break;
+        case ExprTy::VAR_EXPR:
+            init_union_field(this->var_expr, VariableExpr, std::move(to_move.var_expr));
             break;
         default:
             throw std::runtime_error("Unknown Expr type. This");
@@ -203,6 +209,9 @@ Expr::Expr(Expr&& to_move) {
         case ExprTy::UNARY:
             init_union_field(this->unary, UnaryExpr, std::move(to_move.unary));
             break;
+        case ExprTy::VAR_EXPR:
+            init_union_field(this->var_expr, VariableExpr, std::move(to_move.var_expr));
+            break;
         default:
             std::cerr << "Unknown Literal type when constructing an Expr. This should never happen" << std::endl;
     }
@@ -222,6 +231,9 @@ Expr::~Expr() {
             break;
         case ExprTy::UNARY:
             std::destroy_at(&this->unary);
+            break;
+        case ExprTy::VAR_EXPR:
+            std::destroy_at(&this->var_expr);
             break;
         default:
             std::cerr << "Unknown Expression type. This should never happen" << std::endl;
