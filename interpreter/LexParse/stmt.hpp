@@ -3,6 +3,10 @@
 
 #include "expr.hpp"
 
+#include <vector>
+
+class Stmt;
+
 class Expression {
 public:
   Expr expr;
@@ -26,7 +30,15 @@ public:
     ~Var() = default;
 };
 
-enum StmtTy { STMT_EXPR, STMT_PRINT, STMT_VAR };
+class Block {
+  public:
+    std::vector<Stmt> statements;
+    Block(std::vector<Stmt> statements);
+    Block(Block &&to_move);
+    ~Block() = default;
+};
+
+enum StmtTy { STMT_EXPR, STMT_PRINT, STMT_VAR, STMT_BLOCK };
 class Stmt {
 private:
 public:
@@ -35,12 +47,14 @@ public:
     Expression expression;
     Print print;
     Var var;
+    Block block;
   };
   Stmt& operator=(Stmt &&to_move);
   Stmt(Expression expression);
   Stmt(Print print);
   Stmt(Var var);
   Stmt(Stmt &&to_move);
+  Stmt(Block block);
   ~Stmt();
 };
 

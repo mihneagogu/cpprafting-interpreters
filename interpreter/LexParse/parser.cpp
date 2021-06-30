@@ -73,10 +73,24 @@ Stmt Parser::expression_statement() {
   return Expression(std::move(expr));
 }
 
+Block Parser::block() {
+  std::vector<Stmt> sts{};
+
+  while(!check(TokenType::RIGHT_BRACE) && !is_at_end()) {
+      auto decl = declaration();
+    sts.push_back(std::move(decl));
+  }
+  consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
+  return sts;
+}
+
 
 Stmt Parser::statement() {
   if (match(TokenType::PRINT)) {
     return print_statement();
+  }
+  if (match(TokenType::LEFT_BRACE)) {
+    return Stmt(block());
   }
   return expression_statement();
 }

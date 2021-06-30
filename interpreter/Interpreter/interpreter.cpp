@@ -357,6 +357,9 @@ void Interpreter::execute(const Stmt &stmt) {
         case StmtTy::STMT_VAR:
             run_var_stmt(stmt.var);
             break;
+        case StmtTy::STMT_BLOCK:
+            run_block_stmt(stmt.block);
+            break;
         default:
             throw std::runtime_error("Unknown Statement type when executing. This should never happen");
     }
@@ -369,6 +372,46 @@ void Interpreter::run_var_stmt(const Var &var) {
     } else {
         this->env.define(var.name.lexeme, LoxElement::nil());
     }
+}
+
+void Interpreter::execute_block(const std::vector<Stmt> &statements, Env env) {
+    bool thrown = false;
+    // We know we are in a block, so the enclosing of "env" is the scope above,
+    // so we save it here so that we can restore the state later
+    Env *before = env.enclosing;
+    try {
+        // Execute statements under with the new environment
+        this->env = std::move(env);
+        for (auto &st : statements) {
+            execute(st);
+        }
+    }
+    // Totally ugly way of making sure the environment is re-established regardless if a runtime error occurred or not
+    catch (LoxRuntimeErr &ler) {
+        // Make sure we don't double free on the move assignment below, because "before" is this->env.enclosing
+        this->env.enclosing = nullptr;
+        // Re-establish state
+        this->env = std::move(*before);
+        // Free the temporary pointer we allocated after we move out of it
+        delete before;
+        thrown = true;
+        throw; // NOTE: is this ok?
+    }
+
+    if (!thrown) {
+        // Explanation is in the catch clause
+        this->env.enclosing = nullptr;
+        this->env = std::move(*before);
+        delete before;
+    }
+}
+
+void Interpreter::run_block_stmt(const Block &block) {
+    // We need to be careful here to create a new Env with the current enclosing scope then
+    // reset after we finish executing the block.
+    Env *current_enclosing = new Env(std::move(this->env));
+    Env new_env = Env(current_enclosing);
+    execute_block(block.statements, std::move(new_env));
 }
 
 void Interpreter::interpret(const std::vector <Stmt> &statements) {
@@ -393,6 +436,26 @@ std::string LoxRuntimeErr::diagnostic() const {
     res += ": ";
     res += this->why;
     return res;
+}
+
+Env::Env(Env *enclosing): enclosing(enclosing) {}
+
+Env::Env(Env &&to_move): values(std::move(to_move.values)) {
+    this->enclosing = to_move.enclosing;
+    to_move.enclosing = nullptr;
+}
+
+Env& Env::operator=(Env &&to_move) {
+    this->values = std::move(to_move.values);
+    this->enclosing = to_move.enclosing;
+    to_move.enclosing = nullptr;
+    return *this;
+}
+
+Env::~Env() {
+    if (this->enclosing != nullptr) {
+        delete enclosing;
+    }
 }
 
 Env::Env() {}
@@ -439,6 +502,10 @@ void Env::assign(Token name, LoxElement val) {
         this->values.insert({std::move(name.lexeme), std::move(val)});
         return;
     }
+    if (this->enclosing != nullptr) {
+        this->enclosing->assign(std::move(name), std::move(val));
+        return;
+    }
 
     std::string err = "Undefined variable '";
     err += name.lexeme;
@@ -451,7 +518,10 @@ LoxElement &Env::get(const Token &name) {
     if (iter != this->values.end()) {
         return iter->second;
     }
-    std::string err = "Undefined variable' ";
+    if (this->enclosing != nullptr) {
+        return this->enclosing->get(name);
+    }
+    std::string err = "Undefined variable '";
     err += name.lexeme;
     err += "'.";
     throw LoxRuntimeErr{name.clone(), err};

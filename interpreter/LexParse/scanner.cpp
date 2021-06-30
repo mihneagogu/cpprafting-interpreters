@@ -75,7 +75,7 @@ void Scanner::scan_token() {
         add_token(TokenType::LEFT_BRACE);
         break;
       case '}':
-        add_token(TokenType::RIGHT_PAREN);
+        add_token(TokenType::RIGHT_BRACE);
         break;
       case ',':
         add_token(TokenType::COMMA);

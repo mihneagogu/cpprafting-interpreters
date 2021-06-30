@@ -79,10 +79,16 @@ private:
   std::unordered_map<std::string, LoxElement> values;
 
 public:
+  Env *enclosing = nullptr;
   Env();
+  Env(Env *enclosing);
   void define(std::string name, LoxElement val);
   void assign(Token name, LoxElement val);
   LoxElement& get(const Token &name);
+  Env(Env &&to_move);
+  Env& operator=(Env &&to_move);
+
+  ~Env();
 };
 
 
@@ -105,6 +111,8 @@ private:
   void run_print_stmt(const Print &print);
   void run_expression_stmt(const Expression &expression);
   void run_var_stmt(const Var& var);
+  void execute_block(const std::vector<Stmt> &statements, Env env);
+  void run_block_stmt(const Block &block);
   void execute(const Stmt &stmt);
 
 

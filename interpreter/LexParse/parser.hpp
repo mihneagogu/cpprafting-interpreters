@@ -14,7 +14,8 @@
    program        → declaration* EOF;
    declaration    → varDecl | statement;
    varDecl        → "var" IDENTIFIER  ("=" expression )? ";" ;
-   statement      → exprStmt | printStmt;
+   statement      → exprStmt | printStmt | block;
+   block          → "{" declaration* "}";
    exprStmt       → expression ";";
    printStmt      → "print" expression ";";
    expression     → assignment ;
@@ -49,6 +50,7 @@ class Parser {
         Stmt expression_statement();
         Stmt declaration();
         Stmt var_declaration();
+        Block block();
 
         bool match(int n_types, .../*TokenTy... types*/);
         bool match(TokenType ty);
