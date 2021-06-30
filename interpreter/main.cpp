@@ -28,11 +28,7 @@ static void run(char *content, long content_len) {
   auto parser = Parser(std::move(tokens));
   auto prog = parser.parse();
   auto interp = Interpreter{};
-  try {
-    interp.interpret(prog);
-  } catch (LoxRuntimeErr &rer) {
-    std::cout << "Caught runtime error from interpreter\n";
-  }
+  interp.interpret(prog);
   free(content);
 }
 

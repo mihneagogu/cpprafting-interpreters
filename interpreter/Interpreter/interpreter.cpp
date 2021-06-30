@@ -377,12 +377,23 @@ void Interpreter::interpret(const std::vector <Stmt> &statements) {
             execute(stmt);
         }
     } catch (LoxRuntimeErr &ler) {
+        std::cout << ler.diagnostic() << std::endl;
     }
 }
 
 LoxRuntimeErr::LoxRuntimeErr(Token where, std::string why) : where(std::move(where)), why(std::move(why)) {}
 
 LoxRuntimeErr::LoxRuntimeErr(Token where, const char *why) : where(std::move(where)), why(std::string{why}) {}
+
+std::string LoxRuntimeErr::diagnostic() const {
+    std::string res = "Error at: ";
+    res += this->where.lexeme;
+    res += " on line ";
+    res += std::to_string(this->where.get_line());
+    res += ": ";
+    res += this->why;
+    return res;
+}
 
 Env::Env() {}
 
@@ -429,9 +440,9 @@ void Env::assign(Token name, LoxElement val) {
         return;
     }
 
-    std::string err = "Undefined variable ''";
+    std::string err = "Undefined variable '";
     err += name.lexeme;
-    err += "'.'";
+    err += "'.";
     throw LoxRuntimeErr(std::move(name), std::move(err));
 }
 

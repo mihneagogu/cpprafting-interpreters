@@ -35,7 +35,7 @@ class Parser {
     private:
         int current;
 
-                Expr assignment();
+        Expr assignment();
         Expr expression();
         Expr equality();
         Expr comparison();

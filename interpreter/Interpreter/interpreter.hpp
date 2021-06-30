@@ -64,6 +64,7 @@ class LoxRuntimeErr: std::exception {
     Token where;
     std::string why;
   public:
+    std::string diagnostic() const;
     LoxRuntimeErr(Token where, std::string why);
     LoxRuntimeErr(Token where, const char *why);
 };
