@@ -70,9 +70,19 @@ class AssignExpr {
         ~AssignExpr();
 };
 
+class LogicalExpr {
+    public:
+        Token op/*erator*/;
+        Expr *left;
+        Expr *right;
+        LogicalExpr(Token op, Expr *left, Expr *right);
+        LogicalExpr(LogicalExpr &&to_move);
+        ~LogicalExpr();
+};
+
 
 enum ExprTy {
-    BINARY, GROUPING, LITERAL, UNARY, VAR_EXPR, ASSIGN_EXPR
+    BINARY, GROUPING, LITERAL, UNARY, VAR_EXPR, ASSIGN_EXPR, LOGICAL_EXPR
 };
 
 class Expr {
@@ -85,6 +95,7 @@ class Expr {
             UnaryExpr unary;
             VariableExpr var_expr;
             AssignExpr ass_expr;
+            LogicalExpr logical;
         };
     static Expr lox_nil();
     Expr(BinaryExpr bin);
@@ -93,6 +104,7 @@ class Expr {
     Expr(UnaryExpr unary);
     Expr(VariableExpr var_expr);
     Expr(AssignExpr ass_expr);
+    Expr(LogicalExpr logical);
     Expr(Expr&& to_move);
     Expr& operator=(Expr&& to_move);
     ~Expr();

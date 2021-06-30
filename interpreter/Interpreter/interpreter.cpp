@@ -152,6 +152,20 @@ LoxElement Interpreter::evaluate_unary_expr(const UnaryExpr &unary) {
     return right;
 }
 
+LoxElement Interpreter::evaluate_logical_expr(const LogicalExpr &logical) {
+    LoxElement left = evaluate(*logical.left);
+    if (logical.op.type == TokenType::OR) {
+        if (left.is_truthy()) {
+            return left;
+        }
+    } else {
+        if (!left.is_truthy()) {
+            return left;
+        }
+    }
+    return evaluate(*logical.right);
+}
+
 bool LoxElement::is_number() const { return is_instance_of(LoxTy::LOX_NUMBER); }
 
 double LoxElement::as_number() const {
@@ -330,6 +344,8 @@ LoxElement Interpreter::evaluate(const Expr &expr) {
         case ExprTy::ASSIGN_EXPR:
             // NOTE: same as above
             return evaluate_assign_expr(expr.ass_expr);
+        case ExprTy::LOGICAL_EXPR:
+            return evaluate_logical_expr(expr.logical);
         default:
             throw std::runtime_error(
                     "Unknown expression type when interpreting. This should never happen");
@@ -412,6 +428,14 @@ void Interpreter::run_block_stmt(const Block &block) {
     Env *current_enclosing = new Env(std::move(this->env));
     Env new_env = Env(current_enclosing);
     execute_block(block.statements, std::move(new_env));
+}
+
+void Interpreter::run_if_stmt(const IfStmt &if_stmt) {
+    if (evaluate(if_stmt.condition).is_truthy()) {
+        execute(*if_stmt.then_branch);
+    } else if (if_stmt.else_branch != nullptr) {
+        execute(*if_stmt.else_branch);
+    }
 }
 
 void Interpreter::interpret(const std::vector <Stmt> &statements) {

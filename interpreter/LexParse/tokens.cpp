@@ -12,6 +12,7 @@ Literal::~Literal() {
             break;
         case LiteralTy::LIT_NUMBER:
         case LiteralTy::LIT_BOOL:
+        case LiteralTy::LIT_NIL:
             break;
         default:
             std::cerr << "Unknown Literal type when destructing Literal. This should never happen" << std::endl;

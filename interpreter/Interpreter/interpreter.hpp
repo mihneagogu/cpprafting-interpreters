@@ -104,6 +104,7 @@ private:
   LoxElement evaluate_unary_expr(const UnaryExpr &group);
   LoxElement& evaluate_variable_expr(const VariableExpr& var);
   LoxElement evaluate_assign_expr(const AssignExpr& assign);
+  LoxElement evaluate_logical_expr(const LogicalExpr &logical);
   bool check_number_operand(const Token &tok, const LoxElement &right);
   bool check_bool_operand(const Token &tok, const LoxElement &right);
   bool check_number_operands(const Token &tok, const LoxElement &left, const LoxElement &right);
@@ -113,6 +114,7 @@ private:
   void run_var_stmt(const Var& var);
   void execute_block(const std::vector<Stmt> &statements, Env env);
   void run_block_stmt(const Block &block);
+  void run_if_stmt(const IfStmt &if_stmt);
   void execute(const Stmt &stmt);
 
 

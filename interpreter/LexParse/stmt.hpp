@@ -38,7 +38,17 @@ class Block {
     ~Block() = default;
 };
 
-enum StmtTy { STMT_EXPR, STMT_PRINT, STMT_VAR, STMT_BLOCK };
+class IfStmt {
+  public:
+    Expr condition;
+    Stmt *then_branch;
+    Stmt *else_branch;
+    IfStmt(Expr condition, Stmt *then_branch, Stmt *else_branch);
+    IfStmt(IfStmt &&to_move);
+    ~IfStmt();
+};
+
+enum StmtTy { STMT_EXPR, STMT_PRINT, STMT_VAR, STMT_BLOCK, STMT_IF };
 class Stmt {
 private:
 public:
@@ -48,13 +58,16 @@ public:
     Print print;
     Var var;
     Block block;
+    IfStmt if_stmt;
   };
+
   Stmt& operator=(Stmt &&to_move);
   Stmt(Expression expression);
   Stmt(Print print);
   Stmt(Var var);
   Stmt(Stmt &&to_move);
   Stmt(Block block);
+  Stmt(IfStmt if_stmt);
   ~Stmt();
 };
 

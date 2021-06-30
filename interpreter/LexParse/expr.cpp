@@ -134,6 +134,25 @@ AssignExpr::~AssignExpr() {
   }
 }
 
+LogicalExpr::LogicalExpr(Token op, Expr *left, Expr *right)
+    : op(std::move(op)), left(left), right(right) {}
+
+LogicalExpr::LogicalExpr(LogicalExpr &&to_move): op(std::move(to_move.op)) {
+  this->left = to_move.left;
+  this->right = to_move.right;
+  to_move.left = nullptr;
+  to_move.right = nullptr;
+}
+
+LogicalExpr::~LogicalExpr() {
+  if (this->left != nullptr) {
+    delete this->left;
+  }
+  if (this->right != nullptr) {
+    delete this->right;
+  }
+}
+
 Expr::Expr(BinaryExpr bin) {
   this->ty = ExprTy::BINARY;
   init_union_field(this->bin, BinaryExpr, std::move(bin));
@@ -164,6 +183,11 @@ Expr::Expr(AssignExpr ass_expr) {
   init_union_field(this->ass_expr, AssignExpr, std::move(ass_expr));
 }
 
+Expr::Expr(LogicalExpr logic) {
+  this->ty = ExprTy::LOGICAL_EXPR;
+  init_union_field(this->logical, LogicalExpr, std::move(logic));
+}
+
 Expr &Expr::operator=(Expr &&to_move) {
   // The order here is very important. It might be the case that "this" was
   // previously another type of expression, in which case we need to manually
@@ -190,6 +214,9 @@ Expr &Expr::operator=(Expr &&to_move) {
   case ExprTy::ASSIGN_EXPR:
     std::destroy_at(&this->ass_expr);
     break;
+  case ExprTy::LOGICAL_EXPR:
+    std::destroy_at(&this->logical);
+    break;
   default:
     throw std::runtime_error("Unknown Expr type when destructing");
   }
@@ -211,6 +238,9 @@ Expr &Expr::operator=(Expr &&to_move) {
     break;
   case ExprTy::ASSIGN_EXPR:
     init_union_field(this->ass_expr, AssignExpr, std::move(to_move.ass_expr));
+    break;
+  case ExprTy::LOGICAL_EXPR:
+    init_union_field(this->logical, LogicalExpr, std::move(to_move.logical));
     break;
   default:
     throw std::runtime_error("Unknown Expr type when destructing");
@@ -240,6 +270,9 @@ Expr::Expr(Expr &&to_move) {
   case ExprTy::ASSIGN_EXPR:
     init_union_field(this->ass_expr, AssignExpr, std::move(to_move.ass_expr));
     break;
+  case ExprTy::LOGICAL_EXPR:
+    init_union_field(this->logical, LogicalExpr, std::move(to_move.logical));
+    break;
   default:
     std::cerr << "Unknown Literal type when constructing an Expr. This should "
                  "never happen"
@@ -251,7 +284,7 @@ Expr::~Expr() {
   switch (this->ty) {
   case ExprTy::BINARY:
     std::destroy_at(&this->bin);
-    break;
+
   case ExprTy::GROUPING:
     std::destroy_at(&this->group);
     break;
@@ -266,6 +299,9 @@ Expr::~Expr() {
     break;
   case ExprTy::ASSIGN_EXPR:
     std::destroy_at(&this->ass_expr);
+    break;
+  case ExprTy::LOGICAL_EXPR:
+    std::destroy_at(&this->logical);
     break;
   default:
     std::cerr << "Unknown Expression type. This should never happen"
@@ -289,6 +325,8 @@ std::string Expr::parenthesize() const {
   case ExprTy::ASSIGN_EXPR:
     // TODO: Implement parenthesize for assign_expr
     return "(some_assignment)";
+  case ExprTy::LOGICAL_EXPR:
+    return "(some_logical_expr)";
   default:
     throw std::runtime_error(
         "Unknown expression type. This should never happen");

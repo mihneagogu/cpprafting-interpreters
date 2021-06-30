@@ -4,116 +4,155 @@
 #include <memory>
 #include <stdexcept>
 
-
 #include "../util.hpp"
 
+Expression::Expression(Expression &&to_move) : expr(std::move(to_move.expr)) {}
 
-Expression::Expression(Expression &&to_move): expr(std::move(to_move.expr)) {}
+Expression::Expression(Expr expr) : expr(std::move(expr)) {}
 
-Expression::Expression(Expr expr): expr(std::move(expr)) {}
+Print::Print(Expr expr) : expr(std::move(expr)) {}
 
-Print::Print(Expr expr): expr(std::move(expr)) {}
+Print::Print(Print &&to_move) : expr(std::move(to_move.expr)) {}
 
-Print::Print(Print &&to_move): expr(std::move(to_move.expr)) {}
+Var::Var(Token name, Expr initializer)
+    : name(std::move(name)), initializer(std::move(initializer)) {}
 
-Var::Var(Token name, Expr initializer): name(std::move(name)), initializer(std::move(initializer)) {}
+Var::Var(Var &&to_move)
+    : name(std::move(to_move.name)),
+      initializer(std::move(to_move.initializer)) {}
 
-Var::Var(Var &&to_move): name(std::move(to_move.name)), initializer(std::move(to_move.initializer)) {}
+Block::Block(std::vector<Stmt> statements)
+    : statements(std::move(statements)) {}
 
-Block::Block(std::vector<Stmt> statements): statements(std::move(statements)) {}
+Block::Block(Block &&to_move) : statements(std::move(to_move.statements)) {}
 
-Block::Block(Block &&to_move): statements(std::move(to_move.statements)) {}
-
-Stmt::Stmt(Expression expression): expression(std::move(expression)) {
-    this->ty = StmtTy::STMT_EXPR;
+IfStmt::IfStmt(Expr cond, Stmt *then_branch, Stmt *else_branch)
+    : condition(std::move(cond)), then_branch(then_branch),
+      else_branch(else_branch) {}
+IfStmt::IfStmt(IfStmt &&to_move) : condition(std::move(to_move.condition)) {
+  this->then_branch = to_move.then_branch;
+  this->else_branch = to_move.else_branch;
+  to_move.then_branch = nullptr;
+  to_move.else_branch = nullptr;
 }
 
-Stmt::Stmt(Print print): print(std::move(print)) {
-    this->ty = StmtTy::STMT_PRINT;
+IfStmt::~IfStmt() {
+  if (this->then_branch != nullptr) {
+    delete this->then_branch;
+  }
+  if (this->else_branch != nullptr) {
+    delete this->else_branch;
+  }
+  // other fields deleted automatically
 }
 
-Stmt::Stmt(Var v): var(std::move(v)) {
-    this->ty = StmtTy::STMT_VAR;
+Stmt::Stmt(Expression expression) : expression(std::move(expression)) {
+  this->ty = StmtTy::STMT_EXPR;
 }
 
-Stmt::Stmt(Block block): block(std::move(block)) {
-    this->ty = StmtTy::STMT_BLOCK;
+Stmt::Stmt(Print print) : print(std::move(print)) {
+  this->ty = StmtTy::STMT_PRINT;
+}
+
+Stmt::Stmt(Var v) : var(std::move(v)) { this->ty = StmtTy::STMT_VAR; }
+
+Stmt::Stmt(Block block) : block(std::move(block)) {
+  this->ty = StmtTy::STMT_BLOCK;
+}
+
+Stmt::Stmt(IfStmt if_stmt) : if_stmt(std::move(if_stmt)) {
+  this->ty = StmtTy::STMT_IF;
 }
 
 Stmt::Stmt(Stmt &&to_move) {
-    this->ty = to_move.ty;
-    switch (to_move.ty) {
-        case StmtTy::STMT_EXPR:
-            init_union_field(this->expression, Expression, std::move(to_move.expression));
-                             break;
-        case StmtTy::STMT_PRINT:
-            init_union_field(this->print, Print, std::move(to_move.print));
-            break;
-        case StmtTy::STMT_VAR:
-            init_union_field(this->var, Var, std::move(to_move.var));
-            break;
-        case StmtTy::STMT_BLOCK:
-            init_union_field(this->block, Block, std::move(to_move.block));
-            break;
-        default:
-            std::cerr << "Unknown Statement type. This should never happen" << std::endl;
-    }
+  this->ty = to_move.ty;
+  switch (to_move.ty) {
+  case StmtTy::STMT_EXPR:
+    init_union_field(this->expression, Expression,
+                     std::move(to_move.expression));
+    break;
+  case StmtTy::STMT_PRINT:
+    init_union_field(this->print, Print, std::move(to_move.print));
+    break;
+  case StmtTy::STMT_VAR:
+    init_union_field(this->var, Var, std::move(to_move.var));
+    break;
+  case StmtTy::STMT_BLOCK:
+    init_union_field(this->block, Block, std::move(to_move.block));
+    break;
+  case StmtTy::STMT_IF:
+    init_union_field(this->if_stmt, IfStmt, std::move(to_move.if_stmt));
+    break;
+  default:
+    std::cerr << "Unknown Statement type. This should never happen"
+              << std::endl;
+  }
 }
 
-Stmt& Stmt::operator=(Stmt &&to_move) {
-    switch (this->ty) {
-        case StmtTy::STMT_EXPR:
-            std::destroy_at(&this->expression);
-            break;
-        case StmtTy::STMT_PRINT: 
-            std::destroy_at(&this->print);
-            break;
-        case StmtTy::STMT_VAR:
-            std::destroy_at(&this->var);
-            break;
-        case StmtTy::STMT_BLOCK:
-            std::destroy_at(&this->block);
-            break;
-        default:
-            throw std::runtime_error("Unknown Statement type when assigning. This should never happen");
-    }
-    switch (to_move.ty) {
-        case StmtTy::STMT_EXPR:
-            init_union_field(this->expression, Expression, std::move(expression));
-            break;
-        case StmtTy::STMT_PRINT: 
-            init_union_field(this->print, Print, std::move(print));
-            break;
-        case StmtTy::STMT_VAR:
-            init_union_field(this->var, Var, std::move(to_move.var));
-            break;
-        case StmtTy::STMT_BLOCK:
-            init_union_field(this->block, Block, std::move(to_move.block));
-            break;
-        default:
-            throw std::runtime_error("Unknown Statement type when assigning. This should never happen");
-
-    }
-    this->ty = to_move.ty;
-    return *this;
+Stmt &Stmt::operator=(Stmt &&to_move) {
+  switch (this->ty) {
+  case StmtTy::STMT_EXPR:
+    std::destroy_at(&this->expression);
+    break;
+  case StmtTy::STMT_PRINT:
+    std::destroy_at(&this->print);
+    break;
+  case StmtTy::STMT_VAR:
+    std::destroy_at(&this->var);
+    break;
+  case StmtTy::STMT_BLOCK:
+    std::destroy_at(&this->block);
+    break;
+  case StmtTy::STMT_IF:
+    std::destroy_at(&this->if_stmt);
+    break;
+  default:
+    throw std::runtime_error(
+        "Unknown Statement type when assigning. This should never happen");
+  }
+  switch (to_move.ty) {
+  case StmtTy::STMT_EXPR:
+    init_union_field(this->expression, Expression, std::move(expression));
+    break;
+  case StmtTy::STMT_PRINT:
+    init_union_field(this->print, Print, std::move(print));
+    break;
+  case StmtTy::STMT_VAR:
+    init_union_field(this->var, Var, std::move(to_move.var));
+    break;
+  case StmtTy::STMT_BLOCK:
+    init_union_field(this->block, Block, std::move(to_move.block));
+    break;
+  case StmtTy::STMT_IF:
+    init_union_field(this->if_stmt, IfStmt, std::move(to_move.if_stmt));
+    break;
+  default:
+    throw std::runtime_error(
+        "Unknown Statement type when assigning. This should never happen");
+  }
+  this->ty = to_move.ty;
+  return *this;
 }
 
 Stmt::~Stmt() {
-    switch (this->ty) {
-        case StmtTy::STMT_EXPR:
-            std::destroy_at(&this->expression);
-                             break;
-        case StmtTy::STMT_PRINT:
-            std::destroy_at(&this->print);
-            break;
-        case StmtTy::STMT_VAR:
-            std::destroy_at(&this->var);
-            break;
-        case StmtTy::STMT_BLOCK:
-            std::destroy_at(&this->block);
-            break;
-        default:
-            std::cerr << "Unknown Statement type. This should never happen" << std::endl;
-    }
-
+  switch (this->ty) {
+  case StmtTy::STMT_EXPR:
+    std::destroy_at(&this->expression);
+    break;
+  case StmtTy::STMT_PRINT:
+    std::destroy_at(&this->print);
+    break;
+  case StmtTy::STMT_VAR:
+    std::destroy_at(&this->var);
+    break;
+  case StmtTy::STMT_BLOCK:
+    std::destroy_at(&this->block);
+    break;
+  case StmtTy::STMT_IF:
+    std::destroy_at(&this->if_stmt);
+    break;
+  default:
+    std::cerr << "Unknown Statement type. This should never happen"
+              << std::endl;
+  }
 }

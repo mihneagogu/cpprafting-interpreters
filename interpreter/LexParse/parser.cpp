@@ -2,17 +2,17 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "../lox.hpp"
 #include "expr.hpp"
 #include "parser.hpp"
-#include "tokens.hpp"
 #include "stmt.hpp"
-#include "../lox.hpp"
+#include "tokens.hpp"
 
 Parser::Parser(std::vector<Token> tokens)
     : tokens(std::move(tokens)), current(0) {}
 
 Expr Parser::assignment() {
-  auto expr = equality();
+  auto expr = or_expr();
   if (match(TokenType::EQUAL)) {
     auto equals = previous().clone();
     auto *value = new Expr(assignment());
@@ -57,8 +57,6 @@ Stmt Parser::var_declaration() {
   }
 }
 
-
-
 Stmt Parser::print_statement() {
   auto value = expression();
   std::string err_msg = "Expected ; after value.";
@@ -76,16 +74,31 @@ Stmt Parser::expression_statement() {
 Block Parser::block() {
   std::vector<Stmt> sts{};
 
-  while(!check(TokenType::RIGHT_BRACE) && !is_at_end()) {
-      auto decl = declaration();
+  while (!check(TokenType::RIGHT_BRACE) && !is_at_end()) {
+    auto decl = declaration();
     sts.push_back(std::move(decl));
   }
   consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
   return sts;
 }
 
+Stmt Parser::if_statement() {
+  consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
+  auto cond = expression();
+  consume(TokenType::RIGHT_PAREN, "Expect ')' after 'if'.");
+
+  auto then_branch = new Stmt(statement());
+  Stmt *else_branch = nullptr;
+  if (match(TokenType::ELSE)) {
+    else_branch = new Stmt(statement());
+  }
+  return IfStmt(std::move(cond), then_branch, else_branch);
+}
 
 Stmt Parser::statement() {
+  if (match(TokenType::IF)) {
+    return if_statement();
+  }
   if (match(TokenType::PRINT)) {
     return print_statement();
   }
@@ -120,7 +133,7 @@ bool Parser::match(int n_types, /*TokenType... types*/...) {
   va_list args;
   va_start(args, n_types);
   for (int i = 0; i < n_types; i++) {
-    TokenType ty = (TokenType) va_arg(args, int);
+    TokenType ty = (TokenType)va_arg(args, int);
     if (check(ty)) {
       auto prev = advance();
       return true;
@@ -146,11 +159,9 @@ Token Parser::advance() {
 
 bool Parser::is_at_end() { return peek().type == TokenType::TOKENEOF; }
 
-Token& Parser::peek() { return this->tokens[this->current]; }
+Token &Parser::peek() { return this->tokens[this->current]; }
 
-Token& Parser::previous() {
-    return this->tokens[this->current - 1];
-}
+Token &Parser::previous() { return this->tokens[this->current - 1]; }
 
 Expr Parser::comparison() {
   auto expr = Expr(term());
@@ -159,7 +170,30 @@ Expr Parser::comparison() {
                TokenType::LESS_EQUAL)) {
     auto op = previous().clone();
     auto *right = new Expr(term());
-    auto other = Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
+    auto other =
+        Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
+    expr = std::move(other);
+  }
+  return expr;
+}
+
+Expr Parser::and_expr() {
+  auto expr = equality();
+  while (match(TokenType::AND)) {
+    auto op = previous().clone();
+    auto *right = new Expr(equality());
+    auto other = Expr(LogicalExpr(std::move(op), new Expr(std::move(expr)), right));
+    expr = std::move(other);
+  }
+  return expr;
+}
+
+Expr Parser::or_expr() {
+  auto expr = and_expr();
+  while (match(TokenType::OR)) {
+    auto op = previous().clone();
+    auto *right = new Expr(and_expr());
+    auto other = Expr(LogicalExpr(std::move(op), new Expr(std::move(expr)), right));
     expr = std::move(other);
   }
   return expr;
@@ -171,7 +205,8 @@ Expr Parser::term() {
   while (match(2, TokenType::MINUS, TokenType::PLUS)) {
     auto op = Token(previous().clone());
     auto *right = new Expr(factor());
-    auto other = Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
+    auto other =
+        Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
     expr = std::move(other);
   }
   return expr;
@@ -183,7 +218,8 @@ Expr Parser::factor() {
   while (match(2, TokenType::SLASH, TokenType::STAR)) {
     auto op = previous().clone();
     auto *right = new Expr(unary());
-    Expr other = Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
+    Expr other =
+        Expr(BinaryExpr(new Expr(std::move(expr)), std::move(op), right));
     expr = std::move(other);
   }
   return expr;
@@ -191,7 +227,7 @@ Expr Parser::factor() {
 
 Expr Parser::unary() {
   if (match(2, TokenType::BANG, TokenType::MINUS)) {
-      std::cout << previous().to_string() << std::endl;
+    std::cout << previous().to_string() << std::endl;
     auto op = previous().clone();
     auto *right = new Expr(unary());
     return Expr(UnaryExpr(std::move(op), right));
@@ -204,27 +240,32 @@ constexpr int PARSE_ERR_EXIT = 63;
   auto err = std::string(message);
   Lox::error(tok, err);
   exit(PARSE_ERR_EXIT);
-
 }
 
 Expr Parser::primary() {
-  if (match(TokenType::FALSE)) { return Expr(LiteralExpr(Literal::lox_false())); }
-  if (match(TokenType::TRUE)) { return Expr(LiteralExpr(Literal::lox_true())); }
-  if (match(TokenType::NIL)) { return Expr(LiteralExpr(Literal::lox_nil())); }
+  if (match(TokenType::FALSE)) {
+    return Expr(LiteralExpr(Literal::lox_false()));
+  }
+  if (match(TokenType::TRUE)) {
+    return Expr(LiteralExpr(Literal::lox_true()));
+  }
+  if (match(TokenType::NIL)) {
+    return Expr(LiteralExpr(Literal::lox_nil()));
+  }
 
   if (match(2, TokenType::NUMBER, TokenType::STRING)) {
-      auto &prev = previous();
-      if (prev.literal.has_value()) {
-          Literal lit = prev.literal->clone();
-          return Expr(LiteralExpr(std::move(lit)));
-      } else {
-          return Expr(Literal::lox_nil());
-      }
+    auto &prev = previous();
+    if (prev.literal.has_value()) {
+      Literal lit = prev.literal->clone();
+      return Expr(LiteralExpr(std::move(lit)));
+    } else {
+      return Expr(Literal::lox_nil());
+    }
   }
 
   if (match(TokenType::IDENTIFIER)) {
-      auto &prev = previous();
-      auto cl = prev.clone();
+    auto &prev = previous();
+    auto cl = prev.clone();
     return Expr(VariableExpr(previous().clone()));
   }
 
@@ -238,17 +279,20 @@ Expr Parser::primary() {
   error(next, "Expect expression");
 }
 
-/* We are going to make a *terrific* thing for user experience and exit here and now
- *if we encounter a parsing error, doing absolutely nothing to destruct the objects we've created.
- * TODO: signal upwards that we have encountered an error instead of terminating the program */
+/* We are going to make a *terrific* thing for user experience and exit here and
+ *now if we encounter a parsing error, doing absolutely nothing to destruct the
+ *objects we've created.
+ * TODO: signal upwards that we have encountered an error instead of terminating
+ *the program */
 void Parser::error(Token &tok, std::string &message) {
   Lox::error(tok, message);
   exit(PARSE_ERR_EXIT);
 }
 
-
 Token Parser::consume(TokenType ty, std::string &message) {
-  if (check(ty)) { return advance(); }
+  if (check(ty)) {
+    return advance();
+  }
   error(peek(), message);
 }
 
