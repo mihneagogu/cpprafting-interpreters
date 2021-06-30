@@ -11,8 +11,23 @@
 Parser::Parser(std::vector<Token> tokens)
     : tokens(std::move(tokens)), current(0) {}
 
+Expr Parser::assignment() {
+  auto expr = equality();
+  if (match(TokenType::EQUAL)) {
+    auto equals = previous().clone();
+    auto *value = new Expr(assignment());
 
-Expr Parser::expression() { return equality(); }
+    if (expr.ty == ExprTy::VAR_EXPR) {
+      Token name = expr.var_expr.name.clone();
+      return Expr(AssignExpr(std::move(name), value));
+    }
+
+    error(equals, "Invalid assignment target");
+  }
+  return expr;
+}
+
+Expr Parser::expression() { return assignment(); }
 std::vector<Stmt> Parser::parse() {
   std::vector<Stmt> prog;
   while (!is_at_end()) {

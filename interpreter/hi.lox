@@ -1,3 +1,2 @@
 var a = "asd";
-var b = "er";
-print a + b;
+print a = 2;

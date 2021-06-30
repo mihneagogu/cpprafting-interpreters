@@ -61,8 +61,18 @@ class VariableExpr {
 };
 
 
+class AssignExpr {
+    public:
+        Token name;
+        Expr *value;
+        AssignExpr(Token name, Expr *value);
+        AssignExpr(AssignExpr &&to_move);
+        ~AssignExpr();
+};
+
+
 enum ExprTy {
-    BINARY, GROUPING, LITERAL, UNARY, VAR_EXPR
+    BINARY, GROUPING, LITERAL, UNARY, VAR_EXPR, ASSIGN_EXPR
 };
 
 class Expr {
@@ -74,6 +84,7 @@ class Expr {
             LiteralExpr lit;
             UnaryExpr unary;
             VariableExpr var_expr;
+            AssignExpr ass_expr;
         };
     static Expr lox_nil();
     Expr(BinaryExpr bin);
@@ -81,6 +92,7 @@ class Expr {
     Expr(LiteralExpr lit);
     Expr(UnaryExpr unary);
     Expr(VariableExpr var_expr);
+    Expr(AssignExpr ass_expr);
     Expr(Expr&& to_move);
     Expr& operator=(Expr&& to_move);
     ~Expr();

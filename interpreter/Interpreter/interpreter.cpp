@@ -307,6 +307,12 @@ LoxElement &Interpreter::evaluate_variable_expr(const VariableExpr &var) {
     return this->env.get(var.name);
 }
 
+LoxElement Interpreter::evaluate_assign_expr(const AssignExpr &assign) {
+    auto value = evaluate(*assign.value);
+    this->env.assign(assign.name.clone(), std::move(value));
+    return value.copy();
+}
+
 LoxElement Interpreter::evaluate(const Expr &expr) {
     switch (expr.ty) {
         case ExprTy::BINARY:
@@ -318,8 +324,12 @@ LoxElement Interpreter::evaluate(const Expr &expr) {
         case ExprTy::LITERAL:
             return evaluate_literal(expr.lit.lit);
         case ExprTy::VAR_EXPR:
-            // HACK: this is not right, we shouldn't be cloning. After all, this should probably return just a pointer
+            // NOTE: is this right? Potentially we need to worry if the expr is a heap-allocated object.
+            // Should we use shared_ptr for that?
             return evaluate_variable_expr(expr.var_expr).copy();
+        case ExprTy::ASSIGN_EXPR:
+            // NOTE: same as above
+            return evaluate_assign_expr(expr.ass_expr);
         default:
             throw std::runtime_error(
                     "Unknown expression type when interpreting. This should never happen");
@@ -410,6 +420,19 @@ LoxElement::LoxElement(const LoxElement &other) {
 
 LoxElement LoxElement::copy() const {
     return LoxElement(*this);
+}
+
+void Env::assign(Token name, LoxElement val) {
+    if (this->values.find(name.lexeme) != this->values.end()) {
+        this->values.erase(name.lexeme);
+        this->values.insert({std::move(name.lexeme), std::move(val)});
+        return;
+    }
+
+    std::string err = "Undefined variable ''";
+    err += name.lexeme;
+    err += "'.'";
+    throw LoxRuntimeErr(std::move(name), std::move(err));
 }
 
 LoxElement &Env::get(const Token &name) {

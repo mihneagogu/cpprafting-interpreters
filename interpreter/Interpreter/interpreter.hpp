@@ -80,6 +80,7 @@ private:
 public:
   Env();
   void define(std::string name, LoxElement val);
+  void assign(Token name, LoxElement val);
   LoxElement& get(const Token &name);
 };
 
@@ -95,6 +96,7 @@ private:
   LoxElement evaluate_grouping_expr(const GroupingExpr &group);
   LoxElement evaluate_unary_expr(const UnaryExpr &group);
   LoxElement& evaluate_variable_expr(const VariableExpr& var);
+  LoxElement evaluate_assign_expr(const AssignExpr& assign);
   bool check_number_operand(const Token &tok, const LoxElement &right);
   bool check_bool_operand(const Token &tok, const LoxElement &right);
   bool check_number_operands(const Token &tok, const LoxElement &left, const LoxElement &right);
