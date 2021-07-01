@@ -103,7 +103,60 @@ Stmt Parser::while_statement() {
   return Stmt(WhileStmt(std::move(cond), body));
 }
 
+Stmt Parser::for_statement() {
+  consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
+  Stmt *initializer = nullptr;
+  if (match(TokenType::SEMICOLON)) {
+    // nothing
+  } else if (match(TokenType::VAR)) {
+    initializer = new Stmt(var_declaration());
+  } else {
+    initializer = new Stmt(expression_statement());
+  }
+  Expr *cond = nullptr;
+  if (!check(TokenType::SEMICOLON)) {
+    cond = new Expr(expression());
+  }
+  consume(TokenType::SEMICOLON, "Expect ';' after loop condition.");
+
+  Expr *increment = nullptr;
+  if (!check(TokenType::RIGHT_PAREN)) {
+    increment = new Expr(expression());
+  }
+  consume(TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
+  auto body = statement();
+  if (increment != nullptr) {
+    auto inside = std::vector<Stmt>{};
+    inside.push_back(std::move(body));
+    inside.push_back(Stmt(Expression(std::move(*increment))));
+    auto new_body = Stmt(Block(std::move(inside)));
+    delete increment;
+    body = std::move(new_body);
+  }
+  if (cond == nullptr) {
+    cond = new Expr(Literal::lox_true());
+  }
+  auto new_body = Stmt(WhileStmt(std::move(*cond), new Stmt(std::move(body))));
+  delete cond;
+  body = std::move(new_body);
+
+  if (initializer != nullptr) {
+    auto inside = std::vector<Stmt>{};
+    inside.push_back(std::move(*initializer));
+    inside.push_back(std::move(body));
+    new_body = Stmt(Block(std::move(inside)));
+    delete initializer;
+    body = std::move(new_body);
+  }
+
+  return body;
+
+}
+
 Stmt Parser::statement() {
+  if (match(TokenType::FOR)) {
+    return for_statement();
+  }
   if (match(TokenType::IF)) {
     return if_statement();
   }
