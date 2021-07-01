@@ -376,6 +376,9 @@ void Interpreter::execute(const Stmt &stmt) {
         case StmtTy::STMT_BLOCK:
             run_block_stmt(stmt.block);
             break;
+        case StmtTy::STMT_WHILE:
+            run_while_stmt(stmt.while_stmt);
+            break;
         default:
             throw std::runtime_error("Unknown Statement type when executing. This should never happen");
     }
@@ -435,6 +438,12 @@ void Interpreter::run_if_stmt(const IfStmt &if_stmt) {
         execute(*if_stmt.then_branch);
     } else if (if_stmt.else_branch != nullptr) {
         execute(*if_stmt.else_branch);
+    }
+}
+
+void Interpreter::run_while_stmt(const WhileStmt &while_stmt) {
+    while (evaluate(while_stmt.cond).is_truthy()) {
+        execute(*while_stmt.body);
     }
 }
 

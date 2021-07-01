@@ -95,12 +95,23 @@ Stmt Parser::if_statement() {
   return IfStmt(std::move(cond), then_branch, else_branch);
 }
 
+Stmt Parser::while_statement() {
+  consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.");
+  auto cond = expression();
+  consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.");
+  auto *body = new Stmt(statement());
+  return Stmt(WhileStmt(std::move(cond), body));
+}
+
 Stmt Parser::statement() {
   if (match(TokenType::IF)) {
     return if_statement();
   }
   if (match(TokenType::PRINT)) {
     return print_statement();
+  }
+  if (match(TokenType::WHILE)) {
+    return while_statement();
   }
   if (match(TokenType::LEFT_BRACE)) {
     return Stmt(block());

@@ -46,6 +46,18 @@ IfStmt::~IfStmt() {
   // other fields deleted automatically
 }
 
+WhileStmt::WhileStmt(Expr cond, Stmt *body): cond(std::move(cond)), body(body) {}
+WhileStmt::WhileStmt(WhileStmt &&to_move): cond(std::move(to_move.cond)) {
+  this->body = to_move.body;
+  to_move.body = nullptr;
+}
+
+WhileStmt::~WhileStmt() {
+  if (this->body != nullptr) {
+    delete this->body;
+  }
+}
+
 Stmt::Stmt(Expression expression) : expression(std::move(expression)) {
   this->ty = StmtTy::STMT_EXPR;
 }
@@ -62,6 +74,10 @@ Stmt::Stmt(Block block) : block(std::move(block)) {
 
 Stmt::Stmt(IfStmt if_stmt) : if_stmt(std::move(if_stmt)) {
   this->ty = StmtTy::STMT_IF;
+}
+
+Stmt::Stmt(WhileStmt while_stmt): while_stmt(std::move(while_stmt)) {
+  this->ty = StmtTy::STMT_WHILE;
 }
 
 Stmt::Stmt(Stmt &&to_move) {
@@ -82,6 +98,9 @@ Stmt::Stmt(Stmt &&to_move) {
     break;
   case StmtTy::STMT_IF:
     init_union_field(this->if_stmt, IfStmt, std::move(to_move.if_stmt));
+    break;
+  case StmtTy::STMT_WHILE:
+    init_union_field(this->while_stmt, WhileStmt, std::move(to_move.while_stmt));
     break;
   default:
     std::cerr << "Unknown Statement type. This should never happen"
@@ -106,6 +125,9 @@ Stmt &Stmt::operator=(Stmt &&to_move) {
   case StmtTy::STMT_IF:
     std::destroy_at(&this->if_stmt);
     break;
+  case StmtTy::STMT_WHILE:
+    std::destroy_at(&this->while_stmt);
+    break;
   default:
     throw std::runtime_error(
         "Unknown Statement type when assigning. This should never happen");
@@ -125,6 +147,9 @@ Stmt &Stmt::operator=(Stmt &&to_move) {
     break;
   case StmtTy::STMT_IF:
     init_union_field(this->if_stmt, IfStmt, std::move(to_move.if_stmt));
+    break;
+  case StmtTy::STMT_WHILE:
+    init_union_field(this->while_stmt, WhileStmt, std::move(to_move.while_stmt));
     break;
   default:
     throw std::runtime_error(
@@ -150,6 +175,9 @@ Stmt::~Stmt() {
     break;
   case StmtTy::STMT_IF:
     std::destroy_at(&this->if_stmt);
+    break;
+  case StmtTy::STMT_WHILE:
+    std::destroy_at(&this->while_stmt);
     break;
   default:
     std::cerr << "Unknown Statement type. This should never happen"

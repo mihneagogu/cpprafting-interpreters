@@ -1,2 +1,7 @@
-print false or "wadasdasd";
-print false and true;
+{
+  var i = 0;
+  while (i < 10) {
+    print i;
+    i = i + 1;
+  }
+}

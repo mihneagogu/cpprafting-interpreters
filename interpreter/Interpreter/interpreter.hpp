@@ -115,6 +115,7 @@ private:
   void execute_block(const std::vector<Stmt> &statements, Env env);
   void run_block_stmt(const Block &block);
   void run_if_stmt(const IfStmt &if_stmt);
+  void run_while_stmt(const WhileStmt &while_stmt);
   void execute(const Stmt &stmt);
 
 

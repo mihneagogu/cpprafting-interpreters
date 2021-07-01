@@ -48,7 +48,16 @@ class IfStmt {
     ~IfStmt();
 };
 
-enum StmtTy { STMT_EXPR, STMT_PRINT, STMT_VAR, STMT_BLOCK, STMT_IF };
+class WhileStmt {
+  public:
+    Expr cond;
+    Stmt *body;
+    WhileStmt(Expr condition, Stmt *body);
+    WhileStmt(WhileStmt &&to_move);
+    ~WhileStmt();
+};
+
+enum StmtTy { STMT_EXPR, STMT_PRINT, STMT_VAR, STMT_BLOCK, STMT_IF, STMT_WHILE };
 class Stmt {
 private:
 public:
@@ -59,6 +68,7 @@ public:
     Var var;
     Block block;
     IfStmt if_stmt;
+    WhileStmt while_stmt;
   };
 
   Stmt& operator=(Stmt &&to_move);
@@ -68,6 +78,7 @@ public:
   Stmt(Stmt &&to_move);
   Stmt(Block block);
   Stmt(IfStmt if_stmt);
+  Stmt(WhileStmt while_stmt);
   ~Stmt();
 };
 

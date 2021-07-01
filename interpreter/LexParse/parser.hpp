@@ -14,8 +14,9 @@
    program        → declaration* EOF;
    declaration    → varDecl | statement;
    varDecl        → "var" IDENTIFIER  ("=" expression )? ";" ;
-   statement      → exprStmt | ifStmt | printStmt | block;
+   statement      → exprStmt | ifStmt | printStmt | whileStmt | block;
    block          → "{" declaration* "}";
+   whileStmt      → "while" "(" expression ")" statement;
    ifStmt         → "if" "(" expression ")" statement ("else" statement)? ;
    exprStmt       → expression ";";
    printStmt      → "print" expression ";";
@@ -56,6 +57,7 @@ class Parser {
         Stmt declaration();
         Stmt var_declaration();
         Stmt if_statement();
+        Stmt while_statement();
         Block block();
 
 

@@ -284,7 +284,7 @@ Expr::~Expr() {
   switch (this->ty) {
   case ExprTy::BINARY:
     std::destroy_at(&this->bin);
-
+    break;
   case ExprTy::GROUPING:
     std::destroy_at(&this->group);
     break;
