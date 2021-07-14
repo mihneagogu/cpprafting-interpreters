@@ -9,7 +9,26 @@
 #include "../LexParse/stmt.hpp"
 #include "../LexParse/tokens.hpp"
 
-enum LoxTy { LOX_NUMBER, LOX_STRING, LOX_NIL, LOX_OBJ, LOX_BOOL };
+class Interpreter;
+class LoxElement;
+
+// This should really be an interface but it's a bit awkward
+// because then our LoxElement would need to be generic over some T which
+// implements LoxCallable which makes it awkward, so we leave it as an abstract class
+class LoxCallable {
+  virtual int arity();
+  virtual LoxElement call(Interpreter *interp, std::vector<LoxElement> args);
+};
+
+static long long get_system_time();
+
+class NativeClockFn : LoxCallable {
+  int arity();
+  LoxElement call(Interpreter *interp, std::vector<LoxElement> args);
+};
+
+
+enum LoxTy { LOX_NUMBER, LOX_STRING, LOX_NIL, LOX_OBJ, LOX_BOOL, LOX_CALLABLE };
 
 /* An actual element (loosely, object) from Lox. It can either be
  * a string, a number, or an object (thinking in terms of Lox)
@@ -27,7 +46,9 @@ public:
     bool lox_bool;
     /* LoxObject obj; */
     LoxTy lox_nil; // should only ever be LOX_NIL, it's a placeholder
+    LoxCallable callable;
   };
+
   static LoxElement nil();
   bool is_instance_of(LoxTy ty) const;
   bool is_number() const;
@@ -39,6 +60,9 @@ public:
   LoxElement copy() const;
 
   bool is_truthy() const;
+
+  bool is_callable() const;
+
 
   std::string stringify() const;
 
@@ -95,6 +119,7 @@ public:
 class Interpreter {
 private:
   Env env;
+  Env globals;
   // HACK. Do we just return pointers (or shared_ptrs) to LoxElements? variable exprs have return type references to
   // LoxElements which are valid as long as they are in the map (AND are not variables which
   // have been redefined since the reference was given out)
@@ -105,6 +130,7 @@ private:
   LoxElement& evaluate_variable_expr(const VariableExpr& var);
   LoxElement evaluate_assign_expr(const AssignExpr& assign);
   LoxElement evaluate_logical_expr(const LogicalExpr &logical);
+  LoxElement evaluate_call_expr(const CallExpr &call);
   bool check_number_operand(const Token &tok, const LoxElement &right);
   bool check_bool_operand(const Token &tok, const LoxElement &right);
   bool check_number_operands(const Token &tok, const LoxElement &left, const LoxElement &right);

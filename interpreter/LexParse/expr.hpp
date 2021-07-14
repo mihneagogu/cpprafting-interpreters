@@ -2,6 +2,8 @@
 #define EXPR_H_
 
 #include <string>
+#include <vector>
+
 
 #include "tokens.hpp"
 #include "../util.hpp"
@@ -80,9 +82,19 @@ class LogicalExpr {
         ~LogicalExpr();
 };
 
+class CallExpr {
+    public:
+        Expr *callee;
+        Token paren;
+        std::vector<Expr> args;
+        CallExpr(Expr *callee, Token paren, std::vector<Expr> args);
+        CallExpr(CallExpr &&to_move);
+        ~CallExpr();
+};
+
 
 enum ExprTy {
-    BINARY, GROUPING, LITERAL, UNARY, VAR_EXPR, ASSIGN_EXPR, LOGICAL_EXPR
+    BINARY, GROUPING, LITERAL, UNARY, VAR_EXPR, ASSIGN_EXPR, LOGICAL_EXPR, CALL_EXPR
 };
 
 class Expr {
@@ -96,6 +108,7 @@ class Expr {
             VariableExpr var_expr;
             AssignExpr ass_expr;
             LogicalExpr logical;
+            CallExpr call;
         };
     static Expr lox_nil();
     Expr(BinaryExpr bin);
@@ -105,6 +118,7 @@ class Expr {
     Expr(VariableExpr var_expr);
     Expr(AssignExpr ass_expr);
     Expr(LogicalExpr logical);
+    Expr(CallExpr call);
     Expr(Expr&& to_move);
     Expr& operator=(Expr&& to_move);
     ~Expr();

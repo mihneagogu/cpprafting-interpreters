@@ -36,7 +36,32 @@ std::vector<Stmt> Parser::parse() {
   return prog;
 }
 
+Stmt Parser::function(std::string kind) {
+  std::string err = "Expect ";
+  err += kind;
+  err += " name.";
+  Token name = consume(TokenType::IDENTIFIER, err);
+  std::vector<Token> params{};
+  if (!check(TokenType::RIGHT_PAREN)) {
+    do {
+      if (params.size() >= 255) {
+        error(peek(), "Can't have more than 255 parameters.");
+      }
+      params.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+    } while (match(TokenType::COMMA));
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters");
+  }
+  std::string expect_curly_bracket = "Expect '{' before";
+  expect_curly_bracket += kind;
+  expect_curly_bracket += " body";
+  consume(TokenType::LEFT_BRACE, expect_curly_bracket);
+
+  auto body = block();
+  return Stmt(FuncStmt(std::move(name), std::move(params), std::move(body)));
+}
+
 Stmt Parser::declaration() {
+  if (match(TokenType::FUN)) { return function("function"); }
   if (match(TokenType::VAR)) {
     return var_declaration();
   }
@@ -289,6 +314,35 @@ Expr Parser::factor() {
   return expr;
 }
 
+constexpr size_t MAX_FUNC_ARGS = 255;
+
+Expr Parser::finish_call(Expr *callee) {
+  std::vector<Expr> args{};
+  if (!check(TokenType::RIGHT_PAREN)) {
+    do {
+      if (args.size() >= MAX_FUNC_ARGS) {
+        error(peek(), "Can't have more than 255 arguments.");
+      }
+      args.push_back(expression());
+    } while (match(TokenType::COMMA));
+  }
+  auto paren = consume(TokenType::RIGHT_PAREN, "Expect ')' after arguments.");
+  return Expr(CallExpr(callee, std::move(paren), std::move(args)));
+}
+
+Expr Parser::call() {
+  auto expr = primary();
+  while (true) {
+    if (match(TokenType::LEFT_PAREN)) {
+      auto new_expr = finish_call(new Expr(std::move(expr)));
+      expr = std::move(new_expr);
+    } else {
+      break;
+    }
+  }
+  return expr;
+}
+
 Expr Parser::unary() {
   if (match(2, TokenType::BANG, TokenType::MINUS)) {
     std::cout << previous().to_string() << std::endl;
@@ -296,7 +350,7 @@ Expr Parser::unary() {
     auto *right = new Expr(unary());
     return Expr(UnaryExpr(std::move(op), right));
   }
-  return primary();
+  return call();
 }
 
 constexpr int PARSE_ERR_EXIT = 63;

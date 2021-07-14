@@ -58,6 +58,13 @@ WhileStmt::~WhileStmt() {
   }
 }
 
+FuncStmt::FuncStmt(Token name, std::vector<Token> params, Block body):
+  name(std::move(name)), params(std::move(params)), body(std::move(body))
+{}
+FuncStmt::FuncStmt(FuncStmt &&to_move):
+  name(std::move(to_move.name)), params(std::move(to_move.params)), body(std::move(to_move.body))
+{}
+
 Stmt::Stmt(Expression expression) : expression(std::move(expression)) {
   this->ty = StmtTy::STMT_EXPR;
 }
@@ -78,6 +85,10 @@ Stmt::Stmt(IfStmt if_stmt) : if_stmt(std::move(if_stmt)) {
 
 Stmt::Stmt(WhileStmt while_stmt): while_stmt(std::move(while_stmt)) {
   this->ty = StmtTy::STMT_WHILE;
+}
+
+Stmt::Stmt(FuncStmt func_stmt): func_stmt(std::move(func_stmt)) {
+  this->ty = StmtTy::STMT_FUNC;
 }
 
 Stmt::Stmt(Stmt &&to_move) {
@@ -101,6 +112,9 @@ Stmt::Stmt(Stmt &&to_move) {
     break;
   case StmtTy::STMT_WHILE:
     init_union_field(this->while_stmt, WhileStmt, std::move(to_move.while_stmt));
+    break;
+  case StmtTy::STMT_FUNC:
+    init_union_field(this->func_stmt, FuncStmt, std::move(to_move.func_stmt));
     break;
   default:
     std::cerr << "Unknown Statement type. This should never happen"
@@ -128,6 +142,9 @@ Stmt &Stmt::operator=(Stmt &&to_move) {
   case StmtTy::STMT_WHILE:
     std::destroy_at(&this->while_stmt);
     break;
+  case StmtTy::STMT_FUNC:
+    std::destroy_at(&this->func_stmt);
+    break;
   default:
     throw std::runtime_error(
         "Unknown Statement type when assigning. This should never happen");
@@ -150,6 +167,9 @@ Stmt &Stmt::operator=(Stmt &&to_move) {
     break;
   case StmtTy::STMT_WHILE:
     init_union_field(this->while_stmt, WhileStmt, std::move(to_move.while_stmt));
+    break;
+  case StmtTy::STMT_FUNC:
+    init_union_field(this->func_stmt, FuncStmt, std::move(to_move.func_stmt));
     break;
   default:
     throw std::runtime_error(
@@ -178,6 +198,9 @@ Stmt::~Stmt() {
     break;
   case StmtTy::STMT_WHILE:
     std::destroy_at(&this->while_stmt);
+    break;
+  case StmtTy::STMT_FUNC:
+    std::destroy_at(&this->func_stmt);
     break;
   default:
     std::cerr << "Unknown Statement type. This should never happen"

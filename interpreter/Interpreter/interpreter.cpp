@@ -4,6 +4,9 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
+#include <chrono>
+#include <sys/time.h>
+#include <time.h>
 
 #include "../util.hpp"
 
@@ -48,7 +51,7 @@ LoxElement::LoxElement(LoxElement &&to_move) : ty(to_move.ty) {
             break;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
-                      << std::endl;
+                << std::endl;
     }
 }
 
@@ -66,7 +69,7 @@ LoxElement::~LoxElement() {
             break;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
-                      << std::endl;
+                << std::endl;
             break;
     }
 }
@@ -83,7 +86,7 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
             break;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
-                      << std::endl;
+                << std::endl;
             break;
     }
 
@@ -103,7 +106,7 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
             break;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
-                      << std::endl;
+                << std::endl;
             break;
     }
     this->ty = to_move.ty;
@@ -113,11 +116,11 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
 Interpreter::Interpreter() {}
 
 /*
-** Constructs a LoxElement from the given literal. We make the distinction
-*between
-** LiteralTy and LoxTy because it keeps the interpreter clear and the
-*interpreting stage
-*/
+ ** Constructs a LoxElement from the given literal. We make the distinction
+ *between
+ ** LiteralTy and LoxTy because it keeps the interpreter clear and the
+ *interpreting stage
+ */
 LoxElement Interpreter::evaluate_literal(const Literal &literal) {
     switch (literal.ty) {
         case LiteralTy::LIT_BOOL:
@@ -197,7 +200,7 @@ bool LoxElement::equals(const LoxElement &other) {
             return false;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
-                      << std::endl;
+                << std::endl;
             return false;
     }
 }
@@ -227,7 +230,7 @@ LoxElement Interpreter::evaluate_binary_expr(const BinaryExpr &binary) {
                 return LoxElement(left.as_number() + right.as_number());
             }
             if (left.is_instance_of(LoxTy::LOX_STRING) &&
-                right.is_instance_of(LoxTy::LOX_STRING)) {
+                    right.is_instance_of(LoxTy::LOX_STRING)) {
                 std::string res = left.lox_str;
                 res += right.lox_str;
                 return LoxElement(std::move(res));
@@ -251,7 +254,7 @@ LoxElement Interpreter::evaluate_binary_expr(const BinaryExpr &binary) {
             return left.equals(right);
         default:
             std::cerr << "Unknown binary operator. This should never happen"
-                      << std::endl;
+                << std::endl;
             break;
     }
     UNREACHABLE();
@@ -262,7 +265,7 @@ LoxElement Interpreter::evaluate_grouping_expr(const GroupingExpr &group) {
 }
 
 bool Interpreter::check_number_operand(const Token &tok,
-                                       const LoxElement &right) {
+        const LoxElement &right) {
     if (right.is_number()) {
         return true;
     }
@@ -270,7 +273,7 @@ bool Interpreter::check_number_operand(const Token &tok,
 }
 
 bool Interpreter::check_bool_operand(const Token &tok,
-                                     const LoxElement &right) {
+        const LoxElement &right) {
     if (right.ty != LoxTy::LOX_BOOL) {
         throw LoxRuntimeErr{tok.clone(), "Operand must be a boolean."};
     }
@@ -278,8 +281,8 @@ bool Interpreter::check_bool_operand(const Token &tok,
 }
 
 bool Interpreter::check_number_operands(const Token &tok,
-                                        const LoxElement &left,
-                                        const LoxElement &right) {
+        const LoxElement &left,
+        const LoxElement &right) {
     if (left.ty != LoxTy::LOX_NUMBER || right.ty != LoxTy::LOX_NUMBER) {
         throw LoxRuntimeErr{tok.clone(), "Operand must be a number."};
     }
@@ -298,6 +301,10 @@ bool LoxElement::is_truthy() const {
         return false;
     }
     return true;
+}
+
+bool LoxElement::is_callable() const {
+    return this->ty == LoxTy::LOX_CALLABLE;
 }
 
 std::string LoxElement::stringify() const {
@@ -327,6 +334,23 @@ LoxElement Interpreter::evaluate_assign_expr(const AssignExpr &assign) {
     return value.copy();
 }
 
+LoxElement Interpreter::evaluate_call_expr(const CallExpr &call) {
+    auto callee = evaluate(*call.callee);
+    std::vector<LoxElement> args{};
+    for (auto& arg : call.args) {
+        args.push_back(evaluate(arg));
+    }
+    if (!callee.is_callable()) {
+        throw LoxRuntimeErr(call.paren.clone(), "Can only call functions and classes.");
+    }
+    // if (args.size() != fn.arity()) {
+    //    throw rer
+    // }
+    // LoxCallable fn = (LoxCalable) callee
+    // return fn.call(this, args)
+
+}
+
 LoxElement Interpreter::evaluate(const Expr &expr) {
     switch (expr.ty) {
         case ExprTy::BINARY:
@@ -351,6 +375,7 @@ LoxElement Interpreter::evaluate(const Expr &expr) {
                     "Unknown expression type when interpreting. This should never happen");
     }
 }
+
 
 
 void Interpreter::run_print_stmt(const Print &print) {
@@ -558,4 +583,21 @@ LoxElement &Env::get(const Token &name) {
     err += name.lexeme;
     err += "'.";
     throw LoxRuntimeErr{name.clone(), err};
+}
+
+static long long get_system_time() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    long long t = tv.tv_sec;
+    t *= 1000;
+    t = tv.tv_usec / 1000;
+    return t;
+}
+
+int NativeClockFn::arity() {
+    return 0;
+}
+
+LoxElement NativeClockFn::call(Interpreter *interp, std::vector<LoxElement> args) {
+    return LoxElement(static_cast<double>(get_system_time()));
 }

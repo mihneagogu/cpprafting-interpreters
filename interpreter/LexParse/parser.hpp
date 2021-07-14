@@ -12,7 +12,10 @@
 
 /*
    program        → declaration* EOF;
-   declaration    → varDecl | statement;
+   declaration    → funDecl | varDecl | statement;
+   funDecl        → "fun" function;
+   function       → IDENTIFIER "(" parameters? ")" block;
+   parameters     → IDENTIFIER ("," IDENTIFIER)* ;
    varDecl        → "var" IDENTIFIER  ("=" expression )? ";" ;
    statement      → exprStmt | forStmt | ifStmt | printStmt | whileStmt | block;
    forStmt        → "for" "(" ( varDecl | exprStmt | ";")
@@ -31,7 +34,9 @@
    term           → factor ( ( "-" | "+" ) factor )* ;
    factor         → unary ( ( "/" | "*" ) unary )* ;
    unary          → ( "!" | "-" ) unary
-                    | primary ;
+                    | call ;
+   call           → primary ( "(" arguments? ")" )* ;
+   arguments      → expression ( "," expression )* ;
    primary        → NUMBER | STRING | "true" | "false" | "nil"
                     | "(" expression ")" | IDENTIFIER ;
 */
@@ -52,6 +57,8 @@ class Parser {
         Expr primary();
         Expr or_expr();
         Expr and_expr();
+        Expr call();
+        Expr finish_call(Expr *callee);
 
         Stmt statement();
         Stmt print_statement();
@@ -61,6 +68,7 @@ class Parser {
         Stmt if_statement();
         Stmt while_statement();
         Stmt for_statement();
+        Stmt function(std::string kind);
         Block block();
 
 

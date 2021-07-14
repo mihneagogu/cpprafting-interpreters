@@ -57,7 +57,17 @@ class WhileStmt {
     ~WhileStmt();
 };
 
-enum StmtTy { STMT_EXPR, STMT_PRINT, STMT_VAR, STMT_BLOCK, STMT_IF, STMT_WHILE };
+class FuncStmt {
+  public:
+    Token name;
+    std::vector<Token> params;
+    Block body;
+    FuncStmt(Token name, std::vector<Token> params, Block body);
+    FuncStmt(FuncStmt &&to_move);
+    ~FuncStmt() = default;
+};
+
+enum StmtTy { STMT_EXPR, STMT_PRINT, STMT_VAR, STMT_BLOCK, STMT_IF, STMT_WHILE, STMT_FUNC };
 class Stmt {
 private:
 public:
@@ -69,6 +79,7 @@ public:
     Block block;
     IfStmt if_stmt;
     WhileStmt while_stmt;
+    FuncStmt func_stmt;
   };
 
   Stmt& operator=(Stmt &&to_move);
@@ -79,6 +90,7 @@ public:
   Stmt(Block block);
   Stmt(IfStmt if_stmt);
   Stmt(WhileStmt while_stmt);
+  Stmt(FuncStmt func_stmt);
   ~Stmt();
 };
 

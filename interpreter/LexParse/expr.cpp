@@ -18,6 +18,8 @@ BinaryExpr &BinaryExpr::operator=(BinaryExpr &&to_move) {
   this->left = to_move.left;
   this->right = to_move.right;
   this->op = std::move(to_move.op);
+
+
   to_move.left = nullptr;
   to_move.right = nullptr;
   return *this;
@@ -147,9 +149,25 @@ LogicalExpr::LogicalExpr(LogicalExpr &&to_move): op(std::move(to_move.op)) {
 LogicalExpr::~LogicalExpr() {
   if (this->left != nullptr) {
     delete this->left;
+
   }
   if (this->right != nullptr) {
     delete this->right;
+  }
+}
+
+CallExpr::CallExpr(Expr *callee, Token paren, std::vector<Expr> args):
+  callee(callee), paren(std::move(paren)), args(std::move(args))
+{}
+
+CallExpr::CallExpr(CallExpr &&to_move): paren(std::move(to_move.paren)), args(std::move(to_move.args)) {
+  this->callee = to_move.callee;
+  to_move.callee = nullptr;
+}
+
+CallExpr::~CallExpr() {
+  if (this->callee != nullptr) {
+    delete this->callee;
   }
 }
 
@@ -181,6 +199,11 @@ Expr::Expr(VariableExpr var_expr) {
 Expr::Expr(AssignExpr ass_expr) {
   this->ty = ExprTy::ASSIGN_EXPR;
   init_union_field(this->ass_expr, AssignExpr, std::move(ass_expr));
+}
+
+Expr::Expr(CallExpr call) {
+  this->ty = ExprTy::CALL_EXPR;
+  init_union_field(this->call, CallExpr, std::move(call));
 }
 
 Expr::Expr(LogicalExpr logic) {
@@ -217,6 +240,9 @@ Expr &Expr::operator=(Expr &&to_move) {
   case ExprTy::LOGICAL_EXPR:
     std::destroy_at(&this->logical);
     break;
+  case ExprTy::CALL_EXPR:
+    std::destroy_at(&this->call);
+    break;
   default:
     throw std::runtime_error("Unknown Expr type when destructing");
   }
@@ -241,6 +267,9 @@ Expr &Expr::operator=(Expr &&to_move) {
     break;
   case ExprTy::LOGICAL_EXPR:
     init_union_field(this->logical, LogicalExpr, std::move(to_move.logical));
+    break;
+  case ExprTy::CALL_EXPR:
+    init_union_field(this->call, CallExpr, std::move(to_move.call));
     break;
   default:
     throw std::runtime_error("Unknown Expr type when destructing");
@@ -273,6 +302,9 @@ Expr::Expr(Expr &&to_move) {
   case ExprTy::LOGICAL_EXPR:
     init_union_field(this->logical, LogicalExpr, std::move(to_move.logical));
     break;
+  case ExprTy::CALL_EXPR:
+    init_union_field(this->call, CallExpr, std::move(to_move.call));
+    break;
   default:
     std::cerr << "Unknown Literal type when constructing an Expr. This should "
                  "never happen"
@@ -303,6 +335,9 @@ Expr::~Expr() {
   case ExprTy::LOGICAL_EXPR:
     std::destroy_at(&this->logical);
     break;
+  case ExprTy::CALL_EXPR:
+    std::destroy_at(&this->call);
+    break;
   default:
     std::cerr << "Unknown Expression type. This should never happen"
               << std::endl;
@@ -327,6 +362,8 @@ std::string Expr::parenthesize() const {
     return "(some_assignment)";
   case ExprTy::LOGICAL_EXPR:
     return "(some_logical_expr)";
+  case ExprTy::CALL_EXPR:
+    return "(function call)";
   default:
     throw std::runtime_error(
         "Unknown expression type. This should never happen");
