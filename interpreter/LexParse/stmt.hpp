@@ -79,7 +79,7 @@ public:
     Block block;
     IfStmt if_stmt;
     WhileStmt while_stmt;
-    FuncStmt func_stmt;
+    FuncStmt *func_stmt;
   };
 
   Stmt& operator=(Stmt &&to_move);
@@ -90,7 +90,7 @@ public:
   Stmt(Block block);
   Stmt(IfStmt if_stmt);
   Stmt(WhileStmt while_stmt);
-  Stmt(FuncStmt func_stmt);
+  Stmt(FuncStmt *func_stmt);
   ~Stmt();
 };
 

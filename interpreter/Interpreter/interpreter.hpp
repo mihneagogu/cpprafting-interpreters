@@ -12,19 +12,25 @@
 class Interpreter;
 class LoxElement;
 
-// This should really be an interface but it's a bit awkward
+// NOTE: This should really be an interface but it's a bit awkward
 // because then our LoxElement would need to be generic over some T which
 // implements LoxCallable which makes it awkward, so we leave it as an abstract class
+// for simplicity. (Right now the overhead of dynamic dispatch isn't terribly important)
 class LoxCallable {
-  virtual int arity();
-  virtual LoxElement call(Interpreter *interp, std::vector<LoxElement> args);
+  public:
+  virtual int arity() = 0;
+  virtual LoxElement call(Interpreter *interp, std::vector<LoxElement> args) = 0;
+  virtual std::string to_string() const = 0;
+  virtual ~LoxCallable() = 0;
 };
 
 static long long get_system_time();
 
-class NativeClockFn : LoxCallable {
+class NativeClockFn : public LoxCallable {
   int arity();
   LoxElement call(Interpreter *interp, std::vector<LoxElement> args);
+  std::string to_string() const;
+  ~NativeClockFn();
 };
 
 
@@ -46,7 +52,7 @@ public:
     bool lox_bool;
     /* LoxObject obj; */
     LoxTy lox_nil; // should only ever be LOX_NIL, it's a placeholder
-    LoxCallable callable;
+    LoxCallable *callable;
   };
 
   static LoxElement nil();
@@ -69,7 +75,9 @@ public:
   LoxElement(double num);
   LoxElement(std::string str);
   LoxElement(bool b);
+  LoxElement(LoxCallable *callable);
   LoxElement(LoxElement &&to_move);
+
   LoxElement &operator=(LoxElement &&to_move);
 
 
@@ -119,7 +127,6 @@ public:
 class Interpreter {
 private:
   Env env;
-  Env globals;
   // HACK. Do we just return pointers (or shared_ptrs) to LoxElements? variable exprs have return type references to
   // LoxElements which are valid as long as they are in the map (AND are not variables which
   // have been redefined since the reference was given out)
@@ -138,17 +145,22 @@ private:
   void run_print_stmt(const Print &print);
   void run_expression_stmt(const Expression &expression);
   void run_var_stmt(const Var& var);
-  void execute_block(const std::vector<Stmt> &statements, Env env);
   void run_block_stmt(const Block &block);
   void run_if_stmt(const IfStmt &if_stmt);
   void run_while_stmt(const WhileStmt &while_stmt);
+  void run_func_stmt(const FuncStmt *func_stmt);
   void execute(const Stmt &stmt);
 
 
 public:
+  Env globals;
+
   Interpreter();
   void interpret(const std::vector<Stmt> &statements);
   LoxElement evaluate(const Expr &expr);
+  // Runs the given statements in the given environment, at the end re-establishing the interpreter's
+  // "interp->env" as "env.enclosing" (the one we were passed in)
+  void execute_block(const std::vector<Stmt> &statements, Env env);
 };
 
 

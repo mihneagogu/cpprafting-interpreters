@@ -87,7 +87,7 @@ Stmt::Stmt(WhileStmt while_stmt): while_stmt(std::move(while_stmt)) {
   this->ty = StmtTy::STMT_WHILE;
 }
 
-Stmt::Stmt(FuncStmt func_stmt): func_stmt(std::move(func_stmt)) {
+Stmt::Stmt(FuncStmt *func_stmt): func_stmt(func_stmt) {
   this->ty = StmtTy::STMT_FUNC;
 }
 
@@ -114,7 +114,8 @@ Stmt::Stmt(Stmt &&to_move) {
     init_union_field(this->while_stmt, WhileStmt, std::move(to_move.while_stmt));
     break;
   case StmtTy::STMT_FUNC:
-    init_union_field(this->func_stmt, FuncStmt, std::move(to_move.func_stmt));
+    this->func_stmt = to_move.func_stmt;
+    to_move.func_stmt = nullptr;
     break;
   default:
     std::cerr << "Unknown Statement type. This should never happen"
@@ -143,7 +144,9 @@ Stmt &Stmt::operator=(Stmt &&to_move) {
     std::destroy_at(&this->while_stmt);
     break;
   case StmtTy::STMT_FUNC:
-    std::destroy_at(&this->func_stmt);
+    if (this->func_stmt != nullptr) {
+      delete this->func_stmt;
+    }
     break;
   default:
     throw std::runtime_error(
@@ -169,7 +172,8 @@ Stmt &Stmt::operator=(Stmt &&to_move) {
     init_union_field(this->while_stmt, WhileStmt, std::move(to_move.while_stmt));
     break;
   case StmtTy::STMT_FUNC:
-    init_union_field(this->func_stmt, FuncStmt, std::move(to_move.func_stmt));
+    this->func_stmt = to_move.func_stmt;
+    to_move.func_stmt = nullptr;
     break;
   default:
     throw std::runtime_error(
@@ -200,7 +204,9 @@ Stmt::~Stmt() {
     std::destroy_at(&this->while_stmt);
     break;
   case StmtTy::STMT_FUNC:
-    std::destroy_at(&this->func_stmt);
+    if (this->func_stmt != nullptr) {
+      delete this->func_stmt;
+    }
     break;
   default:
     std::cerr << "Unknown Statement type. This should never happen"

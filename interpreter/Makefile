@@ -1,7 +1,7 @@
 CC = g++
 STD = -std=c++2a
 LEXPARSE = lox.cpp LexParse/tokens.cpp LexParse/scanner.cpp LexParse/expr.cpp LexParse/parser.cpp LexParse/stmt.cpp 
-INTERPRET = Interpreter/interpreter.cpp
+INTERPRET = Interpreter/interpreter.cpp Interpreter/lox_function.cpp
 ASAN = -fsanitize=address
 
 all: build 

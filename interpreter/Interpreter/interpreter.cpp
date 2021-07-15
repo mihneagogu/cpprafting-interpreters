@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "../util.hpp"
+#include "lox_function.hpp"
 
 LoxElement::LoxElement(LoxTy _nil) {
     ASSERT_COND(
@@ -33,6 +34,10 @@ LoxElement::LoxElement(std::string str) {
     init_union_field(this->lox_str, std::string, std::move(str));
 }
 
+LoxElement::LoxElement(LoxCallable *callable): callable(callable) {
+    this->ty = LoxTy::LOX_CALLABLE;
+}
+
 LoxElement::LoxElement(LoxElement &&to_move) : ty(to_move.ty) {
     switch (to_move.ty) {
         case LoxTy::LOX_NUMBER:
@@ -46,6 +51,10 @@ LoxElement::LoxElement(LoxElement &&to_move) : ty(to_move.ty) {
             break;
         case LoxTy::LOX_BOOL:
             this->lox_number = to_move.lox_number;
+            break;
+        case LoxTy::LOX_CALLABLE:
+            this->callable = to_move.callable;
+            to_move.callable = nullptr;
             break;
         case LoxTy::LOX_OBJ:
             break;
@@ -61,6 +70,11 @@ LoxElement::~LoxElement() {
     switch (this->ty) {
         case LoxTy::LOX_STRING:
             std::destroy_at(&this->lox_str);
+            break;
+        case LoxTy::LOX_CALLABLE:
+            if (this->callable != nullptr) {
+                delete this->callable;
+            }
             break;
         case LoxTy::LOX_OBJ:
         case LoxTy::LOX_BOOL:
@@ -78,6 +92,12 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
     switch (this->ty) {
         case LoxTy::LOX_STRING:
             std::destroy_at(&this->lox_str);
+            break;
+        case LoxTy::LOX_CALLABLE:
+            if (this->callable != nullptr) {
+                delete this->callable;
+                this->callable = nullptr;
+            }
             break;
         case LoxTy::LOX_OBJ:
         case LoxTy::LOX_BOOL:
@@ -103,6 +123,10 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
             break;
         case LoxTy::LOX_NIL:
             this->lox_nil = LoxTy::LOX_NIL;
+            break;
+        case LoxTy::LOX_CALLABLE:
+            this->callable = to_move.callable;
+            to_move.callable = nullptr;
             break;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
@@ -343,12 +367,17 @@ LoxElement Interpreter::evaluate_call_expr(const CallExpr &call) {
     if (!callee.is_callable()) {
         throw LoxRuntimeErr(call.paren.clone(), "Can only call functions and classes.");
     }
-    // if (args.size() != fn.arity()) {
-    //    throw rer
-    // }
-    // LoxCallable fn = (LoxCalable) callee
-    // return fn.call(this, args)
-
+    auto *callable = callee.callable;
+    int arrity;
+    if (args.size() != (arrity = callable->arity())) {
+        std::string err = "Expected ";
+        err += arrity;
+        err += " arguments but got ";
+        err += args.size();
+        err += '.';
+        throw LoxRuntimeErr(call.paren.clone(), err);
+    }
+    return callable->call(this, std::move(args));
 }
 
 LoxElement Interpreter::evaluate(const Expr &expr) {
@@ -404,6 +433,9 @@ void Interpreter::execute(const Stmt &stmt) {
         case StmtTy::STMT_WHILE:
             run_while_stmt(stmt.while_stmt);
             break;
+        case StmtTy::STMT_FUNC:
+            run_func_stmt(stmt.func_stmt);
+            break;
         default:
             throw std::runtime_error("Unknown Statement type when executing. This should never happen");
     }
@@ -439,7 +471,7 @@ void Interpreter::execute_block(const std::vector<Stmt> &statements, Env env) {
         // Free the temporary pointer we allocated after we move out of it
         delete before;
         thrown = true;
-        throw; // NOTE: is this ok?
+        throw;
     }
 
     if (!thrown) {
@@ -470,6 +502,11 @@ void Interpreter::run_while_stmt(const WhileStmt &while_stmt) {
     while (evaluate(while_stmt.cond).is_truthy()) {
         execute(*while_stmt.body);
     }
+}
+
+void Interpreter::run_func_stmt(const FuncStmt *func_stmt) {
+    auto *lox_fun = new LoxFunction(func_stmt);
+    this->env.define(func_stmt->name.lexeme, LoxElement(lox_fun));
 }
 
 void Interpreter::interpret(const std::vector <Stmt> &statements) {
@@ -594,10 +631,18 @@ static long long get_system_time() {
     return t;
 }
 
+LoxCallable::~LoxCallable() {}
+
 int NativeClockFn::arity() {
     return 0;
 }
 
+NativeClockFn::~NativeClockFn() {}
+
 LoxElement NativeClockFn::call(Interpreter *interp, std::vector<LoxElement> args) {
     return LoxElement(static_cast<double>(get_system_time()));
+}
+
+std::string NativeClockFn::to_string() const {
+    return "<native fn>";
 }

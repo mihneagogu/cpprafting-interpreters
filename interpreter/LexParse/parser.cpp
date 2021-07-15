@@ -57,7 +57,7 @@ Stmt Parser::function(std::string kind) {
   consume(TokenType::LEFT_BRACE, expect_curly_bracket);
 
   auto body = block();
-  return Stmt(FuncStmt(std::move(name), std::move(params), std::move(body)));
+  return Stmt(new FuncStmt(std::move(name), std::move(params), std::move(body)));
 }
 
 Stmt Parser::declaration() {
