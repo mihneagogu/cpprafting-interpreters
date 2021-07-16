@@ -118,6 +118,7 @@ public:
   Env(Env *enclosing);
   size_t size() const;
   void define(std::string name, LoxElement val);
+  bool erase(const std::string &name);
   void assign(Token name, LoxElement val);
   bool contains(const Token &name);
   LoxElement& get(const Token &name);

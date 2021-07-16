@@ -34,7 +34,7 @@ LoxElement::LoxElement(std::string str) {
     init_union_field(this->lox_str, std::string, std::move(str));
 }
 
-LoxElement::LoxElement(LoxCallable *callable): callable(std::shared_ptr<LoxCallable>(callable)) {
+LoxElement::LoxElement(LoxCallable *callable) : callable(std::shared_ptr<LoxCallable>(callable)) {
     this->ty = LoxTy::LOX_CALLABLE;
 }
 
@@ -53,13 +53,13 @@ LoxElement::LoxElement(LoxElement &&to_move) : ty(to_move.ty) {
             this->lox_number = to_move.lox_number;
             break;
         case LoxTy::LOX_CALLABLE:
-            init_union_field(this->callable, std::shared_ptr<LoxCallable>, std::move(to_move.callable));
+            init_union_field(this->callable, std::shared_ptr < LoxCallable >, std::move(to_move.callable));
             break;
         case LoxTy::LOX_OBJ:
             break;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
-                << std::endl;
+                      << std::endl;
     }
 }
 
@@ -80,7 +80,7 @@ LoxElement::~LoxElement() {
             break;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
-                << std::endl;
+                      << std::endl;
             break;
     }
 }
@@ -100,7 +100,7 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
             break;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
-                << std::endl;
+                      << std::endl;
             break;
     }
 
@@ -119,11 +119,11 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
             this->lox_nil = LoxTy::LOX_NIL;
             break;
         case LoxTy::LOX_CALLABLE:
-            init_union_field(this->callable, std::shared_ptr<LoxCallable>, std::move(to_move.callable));
+            init_union_field(this->callable, std::shared_ptr < LoxCallable >, std::move(to_move.callable));
             break;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
-                << std::endl;
+                      << std::endl;
             break;
     }
     this->ty = to_move.ty;
@@ -219,7 +219,7 @@ bool LoxElement::equals(const LoxElement &other) {
             return false;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
-                << std::endl;
+                      << std::endl;
             return false;
     }
 }
@@ -249,7 +249,7 @@ LoxElement Interpreter::evaluate_binary_expr(const BinaryExpr &binary) {
                 return LoxElement(left.as_number() + right.as_number());
             }
             if (left.is_instance_of(LoxTy::LOX_STRING) &&
-                    right.is_instance_of(LoxTy::LOX_STRING)) {
+                right.is_instance_of(LoxTy::LOX_STRING)) {
                 std::string res = left.lox_str;
                 res += right.lox_str;
                 return LoxElement(std::move(res));
@@ -273,7 +273,7 @@ LoxElement Interpreter::evaluate_binary_expr(const BinaryExpr &binary) {
             return left.equals(right);
         default:
             std::cerr << "Unknown binary operator. This should never happen"
-                << std::endl;
+                      << std::endl;
             break;
     }
     UNREACHABLE();
@@ -284,7 +284,7 @@ LoxElement Interpreter::evaluate_grouping_expr(const GroupingExpr &group) {
 }
 
 bool Interpreter::check_number_operand(const Token &tok,
-        const LoxElement &right) {
+                                       const LoxElement &right) {
     if (right.is_number()) {
         return true;
     }
@@ -292,7 +292,7 @@ bool Interpreter::check_number_operand(const Token &tok,
 }
 
 bool Interpreter::check_bool_operand(const Token &tok,
-        const LoxElement &right) {
+                                     const LoxElement &right) {
     if (right.ty != LoxTy::LOX_BOOL) {
         throw LoxRuntimeErr{tok.clone(), "Operand must be a boolean."};
     }
@@ -300,8 +300,8 @@ bool Interpreter::check_bool_operand(const Token &tok,
 }
 
 bool Interpreter::check_number_operands(const Token &tok,
-        const LoxElement &left,
-        const LoxElement &right) {
+                                        const LoxElement &left,
+                                        const LoxElement &right) {
     if (left.ty != LoxTy::LOX_NUMBER || right.ty != LoxTy::LOX_NUMBER) {
         throw LoxRuntimeErr{tok.clone(), "Operand must be a number."};
     }
@@ -333,7 +333,10 @@ std::string LoxElement::stringify() const {
         case LoxTy::LOX_NUMBER:
             return std::to_string(this->lox_number);
         case LoxTy::LOX_BOOL:
-            return std::to_string(this->lox_bool);
+            if (this->lox_bool) {
+                return "true";
+            }
+            return "false";
         case LoxTy::LOX_NIL:
             return "nil";
         case LoxTy::LOX_CALLABLE:
@@ -348,7 +351,7 @@ std::string LoxElement::stringify() const {
 
 LoxElement &Interpreter::evaluate_variable_expr(const VariableExpr &var) {
     if (this->globals.contains(var.name)) {
-       return this->globals.get(var.name);
+        return this->globals.get(var.name);
     }
     return this->env.get(var.name);
 }
@@ -361,18 +364,18 @@ LoxElement Interpreter::evaluate_assign_expr(const AssignExpr &assign) {
 
 LoxElement Interpreter::evaluate_call_expr(const CallExpr &call) {
     auto callee = evaluate(*call.callee);
-    std::vector<LoxElement> args{};
-    for (auto& arg : call.args) {
+    std::vector <LoxElement> args{};
+    for (auto &arg : call.args) {
         args.push_back(evaluate(arg));
     }
     if (!callee.is_callable()) {
         throw LoxRuntimeErr(call.paren.clone(), "Can only call functions and classes.");
     }
     auto &callable = *callee.callable;
-    int arrity;
-    if (args.size() != (arrity = callable.arity())) {
+    int arity;
+    if (args.size() != (arity = callable.arity())) {
         std::string err = "Expected ";
-        err += arrity;
+        err += arity;
         err += " arguments but got ";
         err += args.size();
         err += '.';
@@ -409,7 +412,6 @@ LoxElement Interpreter::evaluate(const Expr &expr) {
 }
 
 
-
 void Interpreter::run_print_stmt(const Print &print) {
     auto returned = evaluate(print.expr);
     std::cout << returned.stringify() << std::endl;
@@ -436,6 +438,9 @@ void Interpreter::execute(const Stmt &stmt) {
         case StmtTy::STMT_WHILE:
             run_while_stmt(stmt.while_stmt);
             break;
+        case StmtTy::STMT_IF:
+            run_if_stmt(stmt.if_stmt);
+            break;
         case StmtTy::STMT_FUNC:
             run_func_stmt(stmt.func_stmt);
             break;
@@ -453,8 +458,9 @@ void Interpreter::run_var_stmt(const Var &var) {
     }
 }
 
-void Interpreter::execute_block(const std::vector<Stmt> &statements, Env env) {
-    bool thrown = false;
+void Interpreter::execute_block(const std::vector <Stmt> &statements, Env env) {
+    // TODO: refactor duplicated code
+
     // We know we are in a block, so the enclosing of "env" is the scope above,
     // so we save it here so that we can restore the state later
     Env *before = env.enclosing;
@@ -465,23 +471,28 @@ void Interpreter::execute_block(const std::vector<Stmt> &statements, Env env) {
             execute(st);
         }
     }
-    // Totally ugly way of making sure the environment is re-established regardless if a runtime error occurred or not
+        // Totally ugly way of making sure the environment is re-established regardless if a runtime error occurred or not
     catch (LoxRuntimeErr &ler) {
         // Make sure we don't double free on the move assignment below, because "before" is this->env.enclosing
         this->env.enclosing = nullptr;
         // Re-establish state
-        this->env = std::move(*before);
-        // Free the temporary pointer we allocated after we move out of it
-        delete before;
-        thrown = true;
+        if (before != nullptr) {
+            this->env = std::move(*before);
+            // Free the temporary pointer we allocated after we move out of it
+            delete before;
+        } else {
+            this->env = Env{};
+        }
         throw;
     }
 
-    if (!thrown) {
-        // Explanation is in the catch clause
-        this->env.enclosing = nullptr;
+    // Do the cleanup, in case no exception was thrown. Explanation is in the catch clause
+    this->env.enclosing = nullptr;
+    if (before != nullptr) {
         this->env = std::move(*before);
         delete before;
+    } else {
+        this->env = Env{};
     }
 }
 
@@ -536,14 +547,14 @@ std::string LoxRuntimeErr::diagnostic() const {
     return res;
 }
 
-Env::Env(Env *enclosing): enclosing(enclosing) {}
+Env::Env(Env *enclosing) : enclosing(enclosing) {}
 
-Env::Env(Env &&to_move): values(std::move(to_move.values)) {
+Env::Env(Env &&to_move) : values(std::move(to_move.values)) {
     this->enclosing = to_move.enclosing;
     to_move.enclosing = nullptr;
 }
 
-Env& Env::operator=(Env &&to_move) {
+Env &Env::operator=(Env &&to_move) {
     this->values = std::move(to_move.values);
     this->enclosing = to_move.enclosing;
     to_move.enclosing = nullptr;
@@ -565,6 +576,10 @@ void Env::define(std::string name, LoxElement val) {
         this->values.erase(iter);
     }
     this->values.insert({std::move(name), std::move(val)});
+}
+
+bool Env::erase(const std::string &name) {
+    return this->values.erase(name) != 0;
 }
 
 bool Env::contains(const Token &name) {
@@ -594,7 +609,7 @@ LoxElement::LoxElement(const LoxElement &other) {
             // double freeing the object when we hand out a way to copy it?
             break;
         case LoxTy::LOX_CALLABLE:
-            init_union_field(this->callable, std::shared_ptr<LoxCallable>, other.callable);
+            init_union_field(this->callable, std::shared_ptr < LoxCallable >, other.callable);
             break;
         default:
             std::cerr << "Unknown Lox type when copying" << std::endl;
@@ -655,7 +670,7 @@ int NativeClockFn::arity() {
 NativeClockFn::~NativeClockFn() {}
 
 
-LoxElement NativeClockFn::call(Interpreter *interp, std::vector<LoxElement> args) {
+LoxElement NativeClockFn::call(Interpreter *interp, std::vector <LoxElement> args) {
     return LoxElement(static_cast<double>(get_system_time()));
 }
 

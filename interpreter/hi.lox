@@ -1,12 +1,12 @@
-fun add(first, last, a) {
+fun add(first, last, counter) {
+    print clock;
     print "Hi, " + first + " " + last + "!";
-    print a;
-    print add;
+    if (counter == 0) {
+        add(last, first, counter + 1);
+    } 
 }
 
 var a = "123!";
-print add;
-add("mike", "Geeee", 1500);
-print add;
+add("mike", "Geeee", 0);
 print a;
 
