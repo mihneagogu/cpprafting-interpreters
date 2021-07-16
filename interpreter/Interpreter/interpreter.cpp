@@ -34,7 +34,7 @@ LoxElement::LoxElement(std::string str) {
     init_union_field(this->lox_str, std::string, std::move(str));
 }
 
-LoxElement::LoxElement(LoxCallable *callable): callable(callable) {
+LoxElement::LoxElement(LoxCallable *callable): callable(std::shared_ptr<LoxCallable>(callable)) {
     this->ty = LoxTy::LOX_CALLABLE;
 }
 
@@ -53,8 +53,7 @@ LoxElement::LoxElement(LoxElement &&to_move) : ty(to_move.ty) {
             this->lox_number = to_move.lox_number;
             break;
         case LoxTy::LOX_CALLABLE:
-            this->callable = to_move.callable;
-            to_move.callable = nullptr;
+            init_union_field(this->callable, std::shared_ptr<LoxCallable>, std::move(to_move.callable));
             break;
         case LoxTy::LOX_OBJ:
             break;
@@ -72,9 +71,7 @@ LoxElement::~LoxElement() {
             std::destroy_at(&this->lox_str);
             break;
         case LoxTy::LOX_CALLABLE:
-            if (this->callable != nullptr) {
-                delete this->callable;
-            }
+            std::destroy_at(&this->callable);
             break;
         case LoxTy::LOX_OBJ:
         case LoxTy::LOX_BOOL:
@@ -94,10 +91,7 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
             std::destroy_at(&this->lox_str);
             break;
         case LoxTy::LOX_CALLABLE:
-            if (this->callable != nullptr) {
-                delete this->callable;
-                this->callable = nullptr;
-            }
+            std::destroy_at(&this->callable);
             break;
         case LoxTy::LOX_OBJ:
         case LoxTy::LOX_BOOL:
@@ -125,8 +119,7 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
             this->lox_nil = LoxTy::LOX_NIL;
             break;
         case LoxTy::LOX_CALLABLE:
-            this->callable = to_move.callable;
-            to_move.callable = nullptr;
+            init_union_field(this->callable, std::shared_ptr<LoxCallable>, std::move(to_move.callable));
             break;
         default:
             std::cerr << "Unknown LoxElement type. This should never happen"
@@ -341,6 +334,8 @@ std::string LoxElement::stringify() const {
             return std::to_string(this->lox_bool);
         case LoxTy::LOX_NIL:
             return "nil";
+        case LoxTy::LOX_CALLABLE:
+            return this->callable->to_string();
         case LoxTy::LOX_OBJ:
             UNREACHABLE();
         default:
@@ -367,9 +362,9 @@ LoxElement Interpreter::evaluate_call_expr(const CallExpr &call) {
     if (!callee.is_callable()) {
         throw LoxRuntimeErr(call.paren.clone(), "Can only call functions and classes.");
     }
-    auto *callable = callee.callable;
+    auto &callable = *callee.callable;
     int arrity;
-    if (args.size() != (arrity = callable->arity())) {
+    if (args.size() != (arrity = callable.arity())) {
         std::string err = "Expected ";
         err += arrity;
         err += " arguments but got ";
@@ -377,7 +372,7 @@ LoxElement Interpreter::evaluate_call_expr(const CallExpr &call) {
         err += '.';
         throw LoxRuntimeErr(call.paren.clone(), err);
     }
-    return callable->call(this, std::move(args));
+    return callable.call(this, std::move(args));
 }
 
 LoxElement Interpreter::evaluate(const Expr &expr) {
@@ -399,6 +394,8 @@ LoxElement Interpreter::evaluate(const Expr &expr) {
             return evaluate_assign_expr(expr.ass_expr);
         case ExprTy::LOGICAL_EXPR:
             return evaluate_logical_expr(expr.logical);
+        case ExprTy::CALL_EXPR:
+            return evaluate_call_expr(expr.call);
         default:
             throw std::runtime_error(
                     "Unknown expression type when interpreting. This should never happen");
@@ -581,6 +578,10 @@ LoxElement::LoxElement(const LoxElement &other) {
         case LoxTy::LOX_OBJ:
             // Probably need a find a way to alias this one. Maybe LoxObj will internally contain shared_ptr so that we avoid
             // double freeing the object when we hand out a way to copy it?
+            break;
+        case LoxTy::LOX_CALLABLE:
+            this->callable = std::shared_ptr<LoxCallable>{other.callable};
+            break;
         default:
             std::cerr << "Unknown Lox type when copying" << std::endl;
     }
@@ -638,6 +639,7 @@ int NativeClockFn::arity() {
 }
 
 NativeClockFn::~NativeClockFn() {}
+
 
 LoxElement NativeClockFn::call(Interpreter *interp, std::vector<LoxElement> args) {
     return LoxElement(static_cast<double>(get_system_time()));

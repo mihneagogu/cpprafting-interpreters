@@ -1,5 +1,6 @@
-fun add(a, b) {
-    print a + b;
+fun add(first, last) {
+    print "Hi, " + first + " " + last + "!";
 }
 
-print add;
+add("mike", "Geeee");
+

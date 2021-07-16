@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <memory>
 
 #include "../LexParse/expr.hpp"
 #include "../LexParse/stmt.hpp"
@@ -21,6 +22,7 @@ class LoxCallable {
   virtual int arity() = 0;
   virtual LoxElement call(Interpreter *interp, std::vector<LoxElement> args) = 0;
   virtual std::string to_string() const = 0;
+  // Moves out of this object, heap-allocating it so it can be used by shared_ptr's constructor
   virtual ~LoxCallable() = 0;
 };
 
@@ -52,7 +54,7 @@ public:
     bool lox_bool;
     /* LoxObject obj; */
     LoxTy lox_nil; // should only ever be LOX_NIL, it's a placeholder
-    LoxCallable *callable;
+    std::shared_ptr<LoxCallable> callable;
   };
 
   static LoxElement nil();

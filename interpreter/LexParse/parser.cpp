@@ -42,6 +42,10 @@ Stmt Parser::function(std::string kind) {
   err += " name.";
   Token name = consume(TokenType::IDENTIFIER, err);
   std::vector<Token> params{};
+  std::string err_expect_lparen = "Expect '(' after ";
+  err_expect_lparen += kind;
+  err_expect_lparen += " name";
+  consume(TokenType::LEFT_PAREN, err_expect_lparen);
   if (!check(TokenType::RIGHT_PAREN)) {
     do {
       if (params.size() >= 255) {
