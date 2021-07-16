@@ -130,7 +130,9 @@ LoxElement &LoxElement::operator=(LoxElement &&to_move) {
     return *this;
 }
 
-Interpreter::Interpreter() {}
+Interpreter::Interpreter() {
+    this->globals.define("clock", LoxElement(new NativeClockFn{}));
+}
 
 /*
  ** Constructs a LoxElement from the given literal. We make the distinction
@@ -343,7 +345,11 @@ std::string LoxElement::stringify() const {
     }
 }
 
+
 LoxElement &Interpreter::evaluate_variable_expr(const VariableExpr &var) {
+    if (this->globals.contains(var.name)) {
+       return this->globals.get(var.name);
+    }
     return this->env.get(var.name);
 }
 
@@ -559,6 +565,14 @@ void Env::define(std::string name, LoxElement val) {
         this->values.erase(iter);
     }
     this->values.insert({std::move(name), std::move(val)});
+}
+
+bool Env::contains(const Token &name) {
+    return this->values.find(name.lexeme) != this->values.end();
+}
+
+size_t Env::size() const {
+    return this->values.size();
 }
 
 LoxElement::LoxElement(const LoxElement &other) {

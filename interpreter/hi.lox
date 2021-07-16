@@ -1,6 +1,12 @@
-fun add(first, last) {
+fun add(first, last, a) {
     print "Hi, " + first + " " + last + "!";
+    print a;
+    print add;
 }
 
-add("mike", "Geeee");
+var a = "123!";
+print add;
+add("mike", "Geeee", 1500);
+print add;
+print a;
 

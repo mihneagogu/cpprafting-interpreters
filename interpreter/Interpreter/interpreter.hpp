@@ -116,8 +116,10 @@ public:
   Env *enclosing = nullptr;
   Env();
   Env(Env *enclosing);
+  size_t size() const;
   void define(std::string name, LoxElement val);
   void assign(Token name, LoxElement val);
+  bool contains(const Token &name);
   LoxElement& get(const Token &name);
   Env(Env &&to_move);
   Env& operator=(Env &&to_move);
@@ -128,7 +130,6 @@ public:
 
 class Interpreter {
 private:
-  Env env;
   // HACK. Do we just return pointers (or shared_ptrs) to LoxElements? variable exprs have return type references to
   // LoxElements which are valid as long as they are in the map (AND are not variables which
   // have been redefined since the reference was given out)
@@ -156,6 +157,7 @@ private:
 
 public:
   Env globals;
+  Env env;
 
   Interpreter();
   void interpret(const std::vector<Stmt> &statements);
