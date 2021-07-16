@@ -580,7 +580,7 @@ LoxElement::LoxElement(const LoxElement &other) {
             // double freeing the object when we hand out a way to copy it?
             break;
         case LoxTy::LOX_CALLABLE:
-            this->callable = std::shared_ptr<LoxCallable>{other.callable};
+            init_union_field(this->callable, std::shared_ptr<LoxCallable>, other.callable);
             break;
         default:
             std::cerr << "Unknown Lox type when copying" << std::endl;

@@ -20,6 +20,11 @@ LoxFunction::LoxFunction(LoxFunction &&to_move) {
 LoxElement LoxFunction::call(Interpreter *interp, std::vector<LoxElement> args) {
     auto globals = new Env(std::move(interp->globals));
     Env env = Env(globals);
+    auto params_size = this->decl->params.size();
+    for (int i = 0; i < params_size; i++) {
+        env.define(this->decl->params[i].lexeme, std::move(args[i]));
+    }
+
     interp->execute_block(this->decl->body.statements, std::move(env));
     // now the current environment is the "globals" environment
 
