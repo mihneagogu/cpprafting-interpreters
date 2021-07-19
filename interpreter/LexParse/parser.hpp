@@ -17,7 +17,8 @@
    function       → IDENTIFIER "(" parameters? ")" block;
    parameters     → IDENTIFIER ("," IDENTIFIER)* ;
    varDecl        → "var" IDENTIFIER  ("=" expression )? ";" ;
-   statement      → exprStmt | forStmt | ifStmt | printStmt | whileStmt | block;
+   statement      → exprStmt | forStmt | ifStmt | printStmt | returnStmt | whileStmt | block;
+   returnStmt     → "return" expression? ";" ;
    forStmt        → "for" "(" ( varDecl | exprStmt | ";")
                      expression? ";" expression? ")" statement ;
    block          → "{" declaration* "}";
@@ -68,6 +69,7 @@ class Parser {
         Stmt if_statement();
         Stmt while_statement();
         Stmt for_statement();
+        Stmt return_statement();
         Stmt function(std::string kind);
         Block block();
 

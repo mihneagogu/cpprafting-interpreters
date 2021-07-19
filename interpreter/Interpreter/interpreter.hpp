@@ -1,10 +1,10 @@
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
 
-#include <string>
-#include <vector>
-#include <unordered_map>
 #include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "../LexParse/expr.hpp"
 #include "../LexParse/stmt.hpp"
@@ -15,14 +15,17 @@ class LoxElement;
 
 // NOTE: This should really be an interface but it's a bit awkward
 // because then our LoxElement would need to be generic over some T which
-// implements LoxCallable which makes it awkward, so we leave it as an abstract class
-// for simplicity. (Right now the overhead of dynamic dispatch isn't terribly important)
+// implements LoxCallable which makes it awkward, so we leave it as an abstract
+// class for simplicity. (Right now the overhead of dynamic dispatch isn't
+// terribly important)
 class LoxCallable {
-  public:
+public:
   virtual int arity() = 0;
-  virtual LoxElement call(Interpreter *interp, std::vector<LoxElement> args) = 0;
+  virtual LoxElement call(Interpreter *interp,
+                          std::vector<LoxElement> args) = 0;
   virtual std::string to_string() const = 0;
-  // Moves out of this object, heap-allocating it so it can be used by shared_ptr's constructor
+  // Moves out of this object, heap-allocating it so it can be used by
+  // shared_ptr's constructor
   virtual ~LoxCallable() = 0;
 };
 
@@ -34,7 +37,6 @@ class NativeClockFn : public LoxCallable {
   std::string to_string() const;
   ~NativeClockFn();
 };
-
 
 enum LoxTy { LOX_NUMBER, LOX_STRING, LOX_NIL, LOX_OBJ, LOX_BOOL, LOX_CALLABLE };
 
@@ -71,7 +73,6 @@ public:
 
   bool is_callable() const;
 
-
   std::string stringify() const;
 
   LoxElement(double num);
@@ -82,30 +83,31 @@ public:
 
   LoxElement &operator=(LoxElement &&to_move);
 
-
-
-
   ~LoxElement();
 };
 
-/* Yes, dynamic exceptions are bad, but for this specific case it makes sense to use one.
- * In an actual real interpreter it's better to use a variant type for error handling. However,
- * in our case, a runtime error occurring is a fine case for throwing an exception, there is no
- * way of recovering from such an error, so we just halt. I.e the performance sacrifice of an exception
- * is not a problem, since it is non-recoverable as far as the user is concerned. */
-class LoxRuntimeErr: std::exception {
-  private:
-    Token where;
-    std::string why;
-  public:
-    std::string diagnostic() const;
-    LoxRuntimeErr(Token where, std::string why);
-    LoxRuntimeErr(Token where, const char *why);
+/* Yes, dynamic exceptions are bad, but for this specific case it makes sense to
+ * use one. In an actual real interpreter it's better to use a variant type for
+ * error handling. However, in our case, a runtime error occurring is a fine
+ * case for throwing an exception, there is no way of recovering from such an
+ * error, so we just halt. I.e the performance sacrifice of an exception
+ * is not a problem, since it is non-recoverable as far as the user is
+ * concerned. */
+class LoxRuntimeErr : std::exception {
+private:
+  Token where;
+  std::string why;
+
+public:
+  std::string diagnostic() const;
+  LoxRuntimeErr(Token where, std::string why);
+  LoxRuntimeErr(Token where, const char *why);
 };
 
-class DivisionByZeroErr: public LoxRuntimeErr{
-  public:
-    DivisionByZeroErr(Token where, std::string why): LoxRuntimeErr(std::move(where), std::move(why)) {}
+class DivisionByZeroErr : public LoxRuntimeErr {
+public:
+  DivisionByZeroErr(Token where, std::string why)
+      : LoxRuntimeErr(std::move(where), std::move(why)) {}
 };
 
 class Env {
@@ -121,40 +123,44 @@ public:
   bool erase(const std::string &name);
   void assign(Token name, LoxElement val);
   bool contains(const Token &name);
-  LoxElement& get(const Token &name);
+  LoxElement &get(const Token &name);
   Env(Env &&to_move);
-  Env& operator=(Env &&to_move);
+  Env &operator=(Env &&to_move);
 
   ~Env();
 };
 
-
 class Interpreter {
 private:
-  // HACK. Do we just return pointers (or shared_ptrs) to LoxElements? variable exprs have return type references to
-  // LoxElements which are valid as long as they are in the map (AND are not variables which
-  // have been redefined since the reference was given out)
+  // HACK. Do we just return pointers (or shared_ptrs) to LoxElements? variable
+  // exprs have return type references to LoxElements which are valid as long as
+  // they are in the map (AND are not variables which have been redefined since
+  // the reference was given out)
   LoxElement evaluate_literal(const Literal &literal);
   LoxElement evaluate_binary_expr(const BinaryExpr &binary);
   LoxElement evaluate_grouping_expr(const GroupingExpr &group);
   LoxElement evaluate_unary_expr(const UnaryExpr &group);
-  LoxElement& evaluate_variable_expr(const VariableExpr& var);
-  LoxElement evaluate_assign_expr(const AssignExpr& assign);
+  LoxElement &evaluate_variable_expr(const VariableExpr &var);
+  LoxElement evaluate_assign_expr(const AssignExpr &assign);
   LoxElement evaluate_logical_expr(const LogicalExpr &logical);
   LoxElement evaluate_call_expr(const CallExpr &call);
   bool check_number_operand(const Token &tok, const LoxElement &right);
   bool check_bool_operand(const Token &tok, const LoxElement &right);
-  bool check_number_operands(const Token &tok, const LoxElement &left, const LoxElement &right);
+  bool check_number_operands(const Token &tok, const LoxElement &left,
+                             const LoxElement &right);
 
   void run_print_stmt(const Print &print);
   void run_expression_stmt(const Expression &expression);
-  void run_var_stmt(const Var& var);
+  void run_var_stmt(const Var &var);
   void run_block_stmt(const Block &block);
   void run_if_stmt(const IfStmt &if_stmt);
   void run_while_stmt(const WhileStmt &while_stmt);
   void run_func_stmt(const FuncStmt *func_stmt);
+  // Runs the return statement, _throw_ing the returned value.
+  // Yes, this is terrible for performance, however, if we wanted performance we
+  // would make a bytecode VM, not an interpreter, but this is fine for now
+  void run_return_stmt(const ReturnStmt &return_stmt);
   void execute(const Stmt &stmt);
-
 
 public:
   Env globals;
@@ -163,10 +169,18 @@ public:
   Interpreter();
   void interpret(const std::vector<Stmt> &statements);
   LoxElement evaluate(const Expr &expr);
-  // Runs the given statements in the given environment, at the end re-establishing the interpreter's
-  // "interp->env" as "env.enclosing" (the one we were passed in)
+  // Runs the given statements in the given environment, at the end
+  // re-establishing the interpreter's "interp->env" as "env.enclosing" (the one
+  // we were passed in)
   void execute_block(const std::vector<Stmt> &statements, Env env);
 };
 
+class ReturnException : public std::exception {
+public:
+  LoxElement value;
+  ReturnException(LoxElement value);
+  ReturnException(ReturnException &&to_move) = default;
+  ~ReturnException() = default;
+};
 
 #endif // INTERPRETER_H_

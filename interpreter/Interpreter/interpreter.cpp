@@ -444,6 +444,9 @@ void Interpreter::execute(const Stmt &stmt) {
         case StmtTy::STMT_FUNC:
             run_func_stmt(stmt.func_stmt);
             break;
+        case StmtTy::STMT_RETURN:
+            run_return_stmt(stmt.return_stmt);
+            break;
         default:
             throw std::runtime_error("Unknown Statement type when executing. This should never happen");
     }
@@ -521,6 +524,15 @@ void Interpreter::run_while_stmt(const WhileStmt &while_stmt) {
 void Interpreter::run_func_stmt(const FuncStmt *func_stmt) {
     auto *lox_fun = new LoxFunction(func_stmt);
     this->env.define(func_stmt->name.lexeme, LoxElement(lox_fun));
+}
+
+void Interpreter::run_return_stmt(const ReturnStmt &return_stmt) {
+    LoxElement val = LoxElement::nil();
+    if (!return_stmt.value.is_nil()) {
+        val = evaluate(return_stmt.value);
+    }
+
+    throw new ReturnException(std::move(val));
 }
 
 void Interpreter::interpret(const std::vector <Stmt> &statements) {
@@ -677,3 +689,5 @@ LoxElement NativeClockFn::call(Interpreter *interp, std::vector <LoxElement> arg
 std::string NativeClockFn::to_string() const {
     return "<native fn>";
 }
+
+ReturnException::ReturnException(LoxElement value): value(std::move(value)) {}

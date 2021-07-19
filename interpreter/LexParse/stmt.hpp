@@ -67,7 +67,18 @@ class FuncStmt {
     ~FuncStmt() = default;
 };
 
-enum StmtTy { STMT_EXPR, STMT_PRINT, STMT_VAR, STMT_BLOCK, STMT_IF, STMT_WHILE, STMT_FUNC };
+class ReturnStmt {
+  public:
+    Token keyword;
+    Expr value;
+
+    ReturnStmt(Token keyword, Expr value);
+    ReturnStmt(ReturnStmt &&to_move);
+    ~ReturnStmt() = default;
+};
+
+
+enum StmtTy { STMT_EXPR, STMT_PRINT, STMT_VAR, STMT_BLOCK, STMT_IF, STMT_WHILE, STMT_FUNC, STMT_RETURN };
 class Stmt {
 private:
 public:
@@ -80,6 +91,7 @@ public:
     IfStmt if_stmt;
     WhileStmt while_stmt;
     FuncStmt *func_stmt;
+    ReturnStmt return_stmt;
   };
 
   Stmt& operator=(Stmt &&to_move);
@@ -91,6 +103,7 @@ public:
   Stmt(IfStmt if_stmt);
   Stmt(WhileStmt while_stmt);
   Stmt(FuncStmt *func_stmt);
+  Stmt(ReturnStmt return_stmt);
   ~Stmt();
 };
 

@@ -132,6 +132,17 @@ Stmt Parser::while_statement() {
   return Stmt(WhileStmt(std::move(cond), body));
 }
 
+Stmt Parser::return_statement() {
+  auto keyword = previous().clone();
+  auto value = Expr::lox_nil();
+  if (!check(TokenType::SEMICOLON)) {
+    value = expression();
+  }
+  consume(TokenType::SEMICOLON, "Expected ';' after return.");
+  return Stmt(ReturnStmt(std::move(keyword), std::move(value)));
+}
+
+
 Stmt Parser::for_statement() {
   consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
   Stmt *initializer = nullptr;
@@ -191,6 +202,9 @@ Stmt Parser::statement() {
   }
   if (match(TokenType::PRINT)) {
     return print_statement();
+  }
+  if (match(TokenType::RETURN)) {
+    return return_statement();
   }
   if (match(TokenType::WHILE)) {
     return while_statement();
